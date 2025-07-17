@@ -3,8 +3,9 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { users } from "@/lib/schema";
 import { hashPassword, generateToken } from "@/lib/auth";
+import { withCors } from "@/lib/cors";
 
-export async function POST(request: NextRequest) {
+async function registerHandler(request: NextRequest) {
   try {
     const { username, password, email } = await request.json();
 
@@ -99,3 +100,6 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export const POST = withCors(registerHandler);
+export const OPTIONS = withCors(registerHandler);
