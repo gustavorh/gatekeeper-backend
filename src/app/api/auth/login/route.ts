@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { users } from "@/lib/schema";
-import { comparePassword, generateToken } from "@/lib/auth";
+import { comparePassword, generateTokenWithRoles } from "@/lib/auth";
 import { withCors } from "@/lib/cors";
 
 async function loginHandler(request: NextRequest) {
@@ -43,8 +43,8 @@ async function loginHandler(request: NextRequest) {
       );
     }
 
-    // Generar el token JWT
-    const token = generateToken({
+    // Generar el token JWT con roles
+    const token = await generateTokenWithRoles({
       userId: foundUser.id,
       rut: foundUser.rut,
       nombre: foundUser.nombre,

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withAuth } from "@/lib/middleware";
+import { withPermissions } from "@/lib/middleware";
 import { JWTPayload } from "@/lib/auth";
 import { withCors } from "@/lib/cors";
 import { resumeShift } from "@/lib/time-tracking";
+import { PERMISSIONS } from "@/lib/rbac-init";
 
 async function resumeShiftHandler(request: NextRequest, user: JWTPayload) {
   try {
@@ -42,8 +43,10 @@ async function resumeShiftHandler(request: NextRequest, user: JWTPayload) {
   }
 }
 
-// Combinar middlewares
-const resumeShiftWithAuth = withAuth(resumeShiftHandler);
+// Combinar middlewares - solo usuarios con permisos de escritura pueden reanudar turno
+const resumeShiftWithAuth = withPermissions([
+  PERMISSIONS.TIME_TRACKING.WRITE_OWN,
+])(resumeShiftHandler);
 const resumeShiftWithCors = withCors(resumeShiftWithAuth);
 
 export const POST = resumeShiftWithCors;

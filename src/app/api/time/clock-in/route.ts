@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withAuth } from "@/lib/middleware";
+import { withPermissions } from "@/lib/middleware";
 import { JWTPayload } from "@/lib/auth";
 import { withCors } from "@/lib/cors";
 import { clockIn } from "@/lib/time-tracking";
+import { PERMISSIONS } from "@/lib/rbac-init";
 
 async function clockInHandler(request: NextRequest, user: JWTPayload) {
   try {
@@ -41,8 +42,10 @@ async function clockInHandler(request: NextRequest, user: JWTPayload) {
   }
 }
 
-// Combinar middlewares
-const clockInWithAuth = withAuth(clockInHandler);
+// Combinar middlewares - solo usuarios con permisos de time tracking pueden hacer clock-in
+const clockInWithAuth = withPermissions([PERMISSIONS.TIME_TRACKING.WRITE_OWN])(
+  clockInHandler
+);
 const clockInWithCors = withCors(clockInWithAuth);
 
 export const POST = clockInWithCors;

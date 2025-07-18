@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { users } from "@/lib/schema";
-import { hashPassword, generateToken, validateRutDigit } from "@/lib/auth";
+import { users, roles, userRoles } from "@/lib/schema";
+import {
+  hashPassword,
+  generateTokenWithRoles,
+  validateRutDigit,
+} from "@/lib/auth";
 import { withCors } from "@/lib/cors";
 
 async function registerHandler(request: NextRequest) {
@@ -93,8 +97,29 @@ async function registerHandler(request: NextRequest) {
 
     const user = createdUser[0];
 
-    // Generar el token JWT
-    const token = generateToken({
+    // Asignar rol 'employee' por defecto al nuevo usuario
+    try {
+      const employeeRole = await db
+        .select()
+        .from(roles)
+        .where(eq(roles.name, "employee"))
+        .limit(1);
+
+      if (employeeRole.length > 0) {
+        await db.insert(userRoles).values({
+          userId: user.id,
+          roleId: employeeRole[0].id,
+          assignedBy: null, // Sistema automático
+          isActive: true,
+        });
+      }
+    } catch (roleError) {
+      console.error("Error asignando rol por defecto:", roleError);
+      // Continuar aunque falle la asignación de rol
+    }
+
+    // Generar el token JWT con roles
+    const token = await generateTokenWithRoles({
       userId: user.id,
       rut: user.rut,
       nombre: user.nombre,

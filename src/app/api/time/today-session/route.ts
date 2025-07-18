@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withAuth } from "@/lib/middleware";
+import { withPermissions } from "@/lib/middleware";
 import { JWTPayload } from "@/lib/auth";
 import { withCors } from "@/lib/cors";
 import { getTodaySession } from "@/lib/time-tracking";
+import { PERMISSIONS } from "@/lib/rbac-init";
 
 async function getTodaySessionHandler(request: NextRequest, user: JWTPayload) {
   try {
@@ -42,8 +43,10 @@ async function getTodaySessionHandler(request: NextRequest, user: JWTPayload) {
   }
 }
 
-// Combinar middlewares
-const getTodaySessionWithAuth = withAuth(getTodaySessionHandler);
+// Combinar middlewares - solo usuarios con permisos de lectura pueden ver sesión actual
+const getTodaySessionWithAuth = withPermissions([
+  PERMISSIONS.TIME_TRACKING.READ_OWN,
+])(getTodaySessionHandler);
 const getTodaySessionWithCors = withCors(getTodaySessionWithAuth);
 
 export const GET = getTodaySessionWithCors;

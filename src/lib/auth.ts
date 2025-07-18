@@ -1,5 +1,6 @@
 import * as jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import { getUserRoles } from "./rbac-init";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-here";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "24h";
@@ -11,6 +12,8 @@ export interface JWTPayload {
   apellido_paterno: string;
   apellido_materno: string;
   email?: string;
+  roles: string[];
+  permissions: string[];
 }
 
 export function generateToken(payload: JWTPayload): string {
@@ -18,6 +21,28 @@ export function generateToken(payload: JWTPayload): string {
   return (jwt as any).sign({ ...payload }, JWT_SECRET, {
     expiresIn: JWT_EXPIRES_IN,
   });
+}
+
+export async function generateTokenWithRoles(
+  userPayload: Omit<JWTPayload, "roles" | "permissions">
+): Promise<string> {
+  const userRoles = await getUserRoles(userPayload.userId);
+
+  const roles = userRoles.map((role) => role.roleName);
+  const permissions = userRoles.reduce((acc, role) => {
+    const rolePermissions = Array.isArray(role.permissions)
+      ? role.permissions
+      : [];
+    return [...acc, ...rolePermissions];
+  }, [] as string[]);
+
+  const payload: JWTPayload = {
+    ...userPayload,
+    roles,
+    permissions,
+  };
+
+  return generateToken(payload);
 }
 
 export function verifyToken(token: string): JWTPayload | null {

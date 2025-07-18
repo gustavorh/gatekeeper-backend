@@ -144,6 +144,28 @@ export const validationRules = mysqlTable("validation_rules", {
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 
+// RBAC Tables
+export const roles = mysqlTable("roles", {
+  id: int("id").primaryKey().autoincrement(),
+  name: varchar("name", { length: 50 }).notNull().unique(),
+  description: text("description"),
+  permissions: json("permissions").default("{}"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+});
+
+export const userRoles = mysqlTable("user_roles", {
+  id: int("id").primaryKey().autoincrement(),
+  userId: int("user_id").notNull(),
+  roleId: int("role_id").notNull(),
+  assignedAt: timestamp("assigned_at").defaultNow(),
+  assignedBy: int("assigned_by"), // ID del usuario que asignó el rol
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+});
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 
@@ -158,3 +180,9 @@ export type NewWorkStatistics = typeof workStatistics.$inferInsert;
 
 export type ValidationRule = typeof validationRules.$inferSelect;
 export type NewValidationRule = typeof validationRules.$inferInsert;
+
+export type Role = typeof roles.$inferSelect;
+export type NewRole = typeof roles.$inferInsert;
+
+export type UserRole = typeof userRoles.$inferSelect;
+export type NewUserRole = typeof userRoles.$inferInsert;

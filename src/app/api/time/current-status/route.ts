@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withAuth } from "@/lib/middleware";
+import { withPermissions } from "@/lib/middleware";
 import { JWTPayload } from "@/lib/auth";
 import { withCors } from "@/lib/cors";
 import { getCurrentStatus } from "@/lib/time-tracking";
+import { PERMISSIONS } from "@/lib/rbac-init";
 
 async function getCurrentStatusHandler(request: NextRequest, user: JWTPayload) {
   try {
@@ -33,8 +34,10 @@ async function getCurrentStatusHandler(request: NextRequest, user: JWTPayload) {
   }
 }
 
-// Combinar middlewares
-const getCurrentStatusWithAuth = withAuth(getCurrentStatusHandler);
+// Combinar middlewares - solo usuarios con permisos de lectura pueden ver status
+const getCurrentStatusWithAuth = withPermissions([
+  PERMISSIONS.TIME_TRACKING.READ_OWN,
+])(getCurrentStatusHandler);
 const getCurrentStatusWithCors = withCors(getCurrentStatusWithAuth);
 
 export const GET = getCurrentStatusWithCors;

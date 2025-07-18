@@ -8,7 +8,8 @@
     "start": "next start",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:push": "drizzle-kit push"
+    "db:push": "drizzle-kit push",
+    "rbac:init": "tsx src/scripts/init-rbac.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
@@ -24,6 +25,7 @@
     "@types/react": "^19",
     "dotenv": "^17.2.0",
     "drizzle-kit": "^0.31.4",
+    "tsx": "^4.19.2",
     "typescript": "^5"
   }
 }

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withAuth } from "@/lib/middleware";
+import { withPermissions } from "@/lib/middleware";
 import { JWTPayload } from "@/lib/auth";
 import { withCors } from "@/lib/cors";
 import { getRecentActivities } from "@/lib/time-tracking";
+import { PERMISSIONS } from "@/lib/rbac-init";
 
 async function getRecentActivitiesHandler(
   request: NextRequest,
@@ -36,8 +37,10 @@ async function getRecentActivitiesHandler(
   }
 }
 
-// Combinar middlewares
-const getRecentActivitiesWithAuth = withAuth(getRecentActivitiesHandler);
+// Combinar middlewares - solo usuarios con permisos de lectura pueden ver actividades
+const getRecentActivitiesWithAuth = withPermissions([
+  PERMISSIONS.TIME_TRACKING.READ_OWN,
+])(getRecentActivitiesHandler);
 const getRecentActivitiesWithCors = withCors(getRecentActivitiesWithAuth);
 
 export const GET = getRecentActivitiesWithCors;

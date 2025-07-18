@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken, JWTPayload } from "./auth";
+import {
+  hasRole,
+  hasAnyRole,
+  hasPermission,
+  hasAnyPermission,
+} from "./rbac-init";
 
 export function withAuth(
   handler: (req: NextRequest, user: JWTPayload) => Promise<NextResponse>
@@ -39,5 +45,86 @@ export function withAuth(
         { status: 401 }
       );
     }
+  };
+}
+
+// Middleware para verificar roles específicos
+export function withRoles(requiredRoles: string[]) {
+  return function (
+    handler: (req: NextRequest, user: JWTPayload) => Promise<NextResponse>
+  ) {
+    return withAuth(async (request: NextRequest, user: JWTPayload) => {
+      // Verificar si el usuario tiene alguno de los roles requeridos
+      if (!hasAnyRole(user.roles || [], requiredRoles)) {
+        return NextResponse.json(
+          {
+            error: "Acceso denegado",
+            message: `Se requiere uno de los siguientes roles: ${requiredRoles.join(
+              ", "
+            )}`,
+            userRoles: user.roles || [],
+          },
+          { status: 403 }
+        );
+      }
+
+      return handler(request, user);
+    });
+  };
+}
+
+// Middleware para verificar permisos específicos
+export function withPermissions(requiredPermissions: string[]) {
+  return function (
+    handler: (req: NextRequest, user: JWTPayload) => Promise<NextResponse>
+  ) {
+    return withAuth(async (request: NextRequest, user: JWTPayload) => {
+      // Verificar si el usuario tiene alguno de los permisos requeridos
+      if (!hasAnyPermission(user.permissions || [], requiredPermissions)) {
+        return NextResponse.json(
+          {
+            error: "Acceso denegado",
+            message: `Se requiere uno de los siguientes permisos: ${requiredPermissions.join(
+              ", "
+            )}`,
+            userPermissions: user.permissions || [],
+          },
+          { status: 403 }
+        );
+      }
+
+      return handler(request, user);
+    });
+  };
+}
+
+// Middleware para verificar si el usuario puede acceder a sus propios datos o a todos los datos
+export function withResourceAccess(
+  resourceOwnerIdGetter: (req: NextRequest) => number | Promise<number>
+) {
+  return function (
+    handler: (req: NextRequest, user: JWTPayload) => Promise<NextResponse>
+  ) {
+    return withAuth(async (request: NextRequest, user: JWTPayload) => {
+      const resourceOwnerId = await resourceOwnerIdGetter(request);
+
+      // Si es admin, puede acceder a todos los recursos
+      if (hasRole(user.roles || [], "admin")) {
+        return handler(request, user);
+      }
+
+      // Si no es admin, solo puede acceder a sus propios recursos
+      if (user.userId !== resourceOwnerId) {
+        return NextResponse.json(
+          {
+            error: "Acceso denegado",
+            message: "Solo puedes acceder a tus propios datos",
+          },
+          { status: 403 }
+        );
+      }
+
+      return handler(request, user);
+    });
   };
 }
