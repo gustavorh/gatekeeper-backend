@@ -7,12 +7,22 @@ import { withCors } from "@/lib/cors";
 
 async function registerHandler(request: NextRequest) {
   try {
-    const { username, password, email } = await request.json();
+    const { rut, nombre, apellido_paterno, apellido_materno, password, email } =
+      await request.json();
 
-    // Validar que se proporcionen username y password
-    if (!username || !password) {
+    // Validar que se proporcionen los campos obligatorios
+    if (
+      !rut ||
+      !nombre ||
+      !apellido_paterno ||
+      !apellido_materno ||
+      !password
+    ) {
       return NextResponse.json(
-        { error: "Username y password son requeridos" },
+        {
+          error:
+            "RUT, nombre, apellido paterno, apellido materno y password son requeridos",
+        },
         { status: 400 }
       );
     }
@@ -21,7 +31,7 @@ async function registerHandler(request: NextRequest) {
     const existingUser = await db
       .select()
       .from(users)
-      .where(eq(users.username, username))
+      .where(eq(users.rut, rut))
       .limit(1);
 
     if (existingUser.length > 0) {
@@ -51,7 +61,10 @@ async function registerHandler(request: NextRequest) {
 
     // Crear el usuario
     const newUser = await db.insert(users).values({
-      username,
+      rut,
+      nombre,
+      apellido_paterno,
+      apellido_materno,
       password: hashedPassword,
       email: email || null,
     });
@@ -60,7 +73,7 @@ async function registerHandler(request: NextRequest) {
     const createdUser = await db
       .select()
       .from(users)
-      .where(eq(users.username, username))
+      .where(eq(users.rut, rut))
       .limit(1);
 
     if (createdUser.length === 0) {
@@ -75,7 +88,10 @@ async function registerHandler(request: NextRequest) {
     // Generar el token JWT
     const token = generateToken({
       userId: user.id,
-      username: user.username,
+      rut: user.rut,
+      nombre: user.nombre,
+      apellido_paterno: user.apellido_paterno,
+      apellido_materno: user.apellido_materno,
       email: user.email || undefined,
     });
 
@@ -85,7 +101,10 @@ async function registerHandler(request: NextRequest) {
         token,
         user: {
           id: user.id,
-          username: user.username,
+          rut: user.rut,
+          nombre: user.nombre,
+          apellido_paterno: user.apellido_paterno,
+          apellido_materno: user.apellido_materno,
           email: user.email,
           createdAt: user.createdAt,
         },

@@ -7,12 +7,12 @@ import { withCors } from "@/lib/cors";
 
 async function loginHandler(request: NextRequest) {
   try {
-    const { username, password } = await request.json();
+    const { rut, password } = await request.json();
 
-    // Validar que se proporcionen username y password
-    if (!username || !password) {
+    // Validar que se proporcionen rut y password
+    if (!rut || !password) {
       return NextResponse.json(
-        { error: "Username y password son requeridos" },
+        { error: "RUT y password son requeridos" },
         { status: 400 }
       );
     }
@@ -21,7 +21,7 @@ async function loginHandler(request: NextRequest) {
     const user = await db
       .select()
       .from(users)
-      .where(eq(users.username, username))
+      .where(eq(users.rut, rut))
       .limit(1);
 
     if (user.length === 0) {
@@ -46,7 +46,10 @@ async function loginHandler(request: NextRequest) {
     // Generar el token JWT
     const token = generateToken({
       userId: foundUser.id,
-      username: foundUser.username,
+      rut: foundUser.rut,
+      nombre: foundUser.nombre,
+      apellido_paterno: foundUser.apellido_paterno,
+      apellido_materno: foundUser.apellido_materno,
       email: foundUser.email || undefined,
     });
 
@@ -55,7 +58,10 @@ async function loginHandler(request: NextRequest) {
       token,
       user: {
         id: foundUser.id,
-        username: foundUser.username,
+        rut: foundUser.rut,
+        nombre: foundUser.nombre,
+        apellido_paterno: foundUser.apellido_paterno,
+        apellido_materno: foundUser.apellido_materno,
         email: foundUser.email,
         createdAt: foundUser.createdAt,
       },

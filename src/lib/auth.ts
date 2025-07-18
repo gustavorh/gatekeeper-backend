@@ -6,7 +6,10 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "24h";
 
 export interface JWTPayload {
   userId: number;
-  username: string;
+  rut: string;
+  nombre: string;
+  apellido_paterno: string;
+  apellido_materno: string;
   email?: string;
 }
 
