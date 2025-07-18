@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { users } from "@/lib/schema";
-import { hashPassword, generateToken } from "@/lib/auth";
+import { hashPassword, generateToken, validateRutDigit } from "@/lib/auth";
 import { withCors } from "@/lib/cors";
 
 async function registerHandler(request: NextRequest) {
@@ -23,6 +23,14 @@ async function registerHandler(request: NextRequest) {
           error:
             "RUT, nombre, apellido paterno, apellido materno y password son requeridos",
         },
+        { status: 400 }
+      );
+    }
+
+    // Validar el formato y dígito verificador del RUT
+    if (!validateRutDigit(rut)) {
+      return NextResponse.json(
+        { error: "El RUT proporcionado no es válido" },
         { status: 400 }
       );
     }

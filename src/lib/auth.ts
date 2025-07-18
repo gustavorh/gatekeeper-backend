@@ -39,3 +39,62 @@ export async function comparePassword(
 ): Promise<boolean> {
   return bcrypt.compare(password, hash);
 }
+
+/**
+ * Valida el dígito verificador del RUT chileno
+ * @param rut - RUT en formato 12345678-9 o 12345678-K
+ * @returns boolean - true si el dígito verificador es válido
+ */
+export function validateRutDigit(rut: string): boolean {
+  try {
+    // Limpiar el RUT: remover puntos, espacios y convertir a mayúsculas
+    const cleanRut = rut.replace(/[\s.-]/g, "").toUpperCase();
+
+    // Validar formato básico (al menos 2 caracteres)
+    if (cleanRut.length < 2) {
+      return false;
+    }
+
+    // Separar el número del dígito verificador
+    const rutNumber = cleanRut.slice(0, -1);
+    const checkDigit = cleanRut.slice(-1);
+
+    // Validar que la parte numérica solo contenga dígitos
+    if (!/^\d+$/.test(rutNumber)) {
+      return false;
+    }
+
+    // Validar que el dígito verificador sea válido (0-9 o K)
+    if (!/^[0-9K]$/.test(checkDigit)) {
+      return false;
+    }
+
+    // Calcular el dígito verificador esperado
+    let sum = 0;
+    let multiplier = 2;
+
+    // Multiplicar cada dígito de derecha a izquierda
+    for (let i = rutNumber.length - 1; i >= 0; i--) {
+      sum += parseInt(rutNumber[i]) * multiplier;
+      multiplier = multiplier === 7 ? 2 : multiplier + 1;
+    }
+
+    // Calcular el resto de la división por 11
+    const remainder = sum % 11;
+
+    // Determinar el dígito verificador esperado
+    let expectedCheckDigit: string;
+    if (remainder === 0) {
+      expectedCheckDigit = "0";
+    } else if (remainder === 1) {
+      expectedCheckDigit = "K";
+    } else {
+      expectedCheckDigit = (11 - remainder).toString();
+    }
+
+    // Comparar con el dígito verificador proporcionado
+    return checkDigit === expectedCheckDigit;
+  } catch (error) {
+    return false;
+  }
+}
