@@ -1,4 +1,8 @@
+import { config } from "dotenv";
 import { defineConfig } from "drizzle-kit";
+
+// Cargar variables de entorno desde .env
+config();
 
 export default defineConfig({
   schema: "./src/lib/schema.ts",
