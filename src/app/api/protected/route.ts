@@ -8,7 +8,8 @@ async function protectedHandler(request: NextRequest, user: JWTPayload) {
     message: "Acceso exitoso a ruta protegida",
     user: {
       id: user.userId,
-      username: user.username,
+      rut: user.rut,
+      nombre: user.nombre,
       email: user.email,
     },
   });
@@ -19,6 +20,4 @@ const protectedWithAuth = withAuth(protectedHandler);
 const protectedWithCors = withCors(protectedWithAuth);
 
 export const GET = protectedWithCors;
-export const OPTIONS = withCors(async (req: NextRequest) => {
-  return new NextResponse(null, { status: 200 });
-});
+export const OPTIONS = protectedWithCors;

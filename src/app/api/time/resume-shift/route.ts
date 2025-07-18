@@ -47,3 +47,4 @@ const resumeShiftWithAuth = withAuth(resumeShiftHandler);
 const resumeShiftWithCors = withCors(resumeShiftWithAuth);
 
 export const POST = resumeShiftWithCors;
+export const OPTIONS = resumeShiftWithCors;

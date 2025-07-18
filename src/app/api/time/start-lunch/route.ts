@@ -46,3 +46,4 @@ const startLunchWithAuth = withAuth(startLunchHandler);
 const startLunchWithCors = withCors(startLunchWithAuth);
 
 export const POST = startLunchWithCors;
+export const OPTIONS = startLunchWithCors;

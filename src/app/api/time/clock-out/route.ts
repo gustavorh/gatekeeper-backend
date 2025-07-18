@@ -47,3 +47,4 @@ const clockOutWithAuth = withAuth(clockOutHandler);
 const clockOutWithCors = withCors(clockOutWithAuth);
 
 export const POST = clockOutWithCors;
+export const OPTIONS = clockOutWithCors;

@@ -38,3 +38,4 @@ const getCurrentStatusWithAuth = withAuth(getCurrentStatusHandler);
 const getCurrentStatusWithCors = withCors(getCurrentStatusWithAuth);
 
 export const GET = getCurrentStatusWithCors;
+export const OPTIONS = getCurrentStatusWithCors;

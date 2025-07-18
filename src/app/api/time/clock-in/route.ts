@@ -46,3 +46,4 @@ const clockInWithAuth = withAuth(clockInHandler);
 const clockInWithCors = withCors(clockInWithAuth);
 
 export const POST = clockInWithCors;
+export const OPTIONS = clockInWithCors;

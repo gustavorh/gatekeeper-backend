@@ -6,6 +6,11 @@ export function withAuth(
 ) {
   return async (request: NextRequest) => {
     try {
+      // Skip authentication for OPTIONS requests (CORS preflight)
+      if (request.method === "OPTIONS") {
+        return new NextResponse(null, { status: 200 });
+      }
+
       const authHeader = request.headers.get("Authorization");
 
       if (!authHeader || !authHeader.startsWith("Bearer ")) {

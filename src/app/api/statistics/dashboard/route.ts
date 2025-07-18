@@ -42,3 +42,4 @@ const getDashboardStatsWithAuth = withAuth(getDashboardStatsHandler);
 const getDashboardStatsWithCors = withCors(getDashboardStatsWithAuth);
 
 export const GET = getDashboardStatsWithCors;
+export const OPTIONS = getDashboardStatsWithCors;

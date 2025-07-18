@@ -47,3 +47,4 @@ const getTodaySessionWithAuth = withAuth(getTodaySessionHandler);
 const getTodaySessionWithCors = withCors(getTodaySessionWithAuth);
 
 export const GET = getTodaySessionWithCors;
+export const OPTIONS = getTodaySessionWithCors;

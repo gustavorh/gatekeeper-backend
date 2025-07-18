@@ -41,3 +41,4 @@ const getRecentActivitiesWithAuth = withAuth(getRecentActivitiesHandler);
 const getRecentActivitiesWithCors = withCors(getRecentActivitiesWithAuth);
 
 export const GET = getRecentActivitiesWithCors;
+export const OPTIONS = getRecentActivitiesWithCors;
