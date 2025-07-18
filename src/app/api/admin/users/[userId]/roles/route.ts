@@ -6,13 +6,21 @@ import { db } from "@/lib/db";
 import { userRoles, roles, users } from "@/lib/schema";
 import { eq, and } from "drizzle-orm";
 
+// Función auxiliar para extraer userId de manera más robusta
+function extractUserIdFromPath(pathname: string): number | null {
+  const parts = pathname.split("/");
+  const userIdStr = parts[4]; // /api/admin/users/[userId]/roles
+  const userId = parseInt(userIdStr);
+  return !isNaN(userId) ? userId : null;
+}
+
 // GET: Obtener roles de un usuario específico
 async function getUserRolesHandler(request: NextRequest, user: JWTPayload) {
   try {
     const url = new URL(request.url);
-    const userId = parseInt(url.pathname.split("/")[3]);
+    const userId = extractUserIdFromPath(url.pathname);
 
-    if (!userId || isNaN(userId)) {
+    if (!userId) {
       return NextResponse.json(
         { error: "ID de usuario inválido" },
         { status: 400 }
@@ -64,10 +72,10 @@ async function getUserRolesHandler(request: NextRequest, user: JWTPayload) {
 async function assignRoleHandler(request: NextRequest, user: JWTPayload) {
   try {
     const url = new URL(request.url);
-    const userId = parseInt(url.pathname.split("/")[3]);
+    const userId = extractUserIdFromPath(url.pathname);
     const { roleId } = await request.json();
 
-    if (!userId || isNaN(userId)) {
+    if (!userId) {
       return NextResponse.json(
         { error: "ID de usuario inválido" },
         { status: 400 }
@@ -154,10 +162,10 @@ async function assignRoleHandler(request: NextRequest, user: JWTPayload) {
 async function removeRoleHandler(request: NextRequest, user: JWTPayload) {
   try {
     const url = new URL(request.url);
-    const userId = parseInt(url.pathname.split("/")[3]);
+    const userId = extractUserIdFromPath(url.pathname);
     const { roleId } = await request.json();
 
-    if (!userId || isNaN(userId)) {
+    if (!userId) {
       return NextResponse.json(
         { error: "ID de usuario inválido" },
         { status: 400 }
