@@ -679,3 +679,67 @@ export async function getRecentActivities(
     return [];
   }
 }
+
+/**
+ * Obtiene las sesiones históricas del usuario con paginación
+ */
+export async function getUserSessions(
+  userId: number,
+  page: number = 1,
+  limit: number = 10,
+  startDate?: string,
+  endDate?: string
+): Promise<{
+  sessions: WorkSession[];
+  total: number;
+  totalPages: number;
+  currentPage: number;
+}> {
+  try {
+    const offset = (page - 1) * limit;
+
+    // Construir condiciones base
+    let whereConditions = [eq(workSessions.userId, userId)];
+
+    // Añadir filtros de fecha si se proporcionan
+    if (startDate) {
+      whereConditions.push(sql`DATE(${workSessions.date}) >= ${startDate}`);
+    }
+    if (endDate) {
+      whereConditions.push(sql`DATE(${workSessions.date}) <= ${endDate}`);
+    }
+
+    // Contar total de sesiones
+    const totalResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(workSessions)
+      .where(and(...whereConditions));
+
+    const total = totalResult[0].count;
+    const totalPages = Math.ceil(total / limit);
+
+    // Obtener sesiones paginadas
+    const sessions = await db
+      .select()
+      .from(workSessions)
+      .where(and(...whereConditions))
+      .orderBy(desc(workSessions.date))
+      .limit(limit)
+      .offset(offset);
+
+    return {
+      sessions,
+      total,
+      totalPages,
+      currentPage: page,
+    };
+  } catch (error) {
+    console.error("Error obteniendo sesiones del usuario:", error);
+    return {
+      sessions: [],
+      total: 0,
+      totalPages: 0,
+      currentPage: page,
+    };
+  }
+}
