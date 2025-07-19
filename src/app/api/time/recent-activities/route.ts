@@ -1,35 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withPermissions } from "@/lib/middleware";
+
 import { JWTPayload } from "@/lib/auth";
-import { withCors } from "@/lib/cors";
-import { getRecentActivities } from "@/lib/time-tracking";
+import { protectApi, ADMIN_ONLY, PUBLIC_ROUTE } from "@/lib/auth-middleware";
+
+import { getContainer } from "@/config/container-helper";
+import { TYPES } from "@/types";
+import { TimeController } from "@/controllers/TimeController";
 import { PERMISSIONS } from "@/lib/rbac-init";
+import { quickOptions } from "@/lib/cors-helper";
 
 async function getRecentActivitiesHandler(
   request: NextRequest,
-  user: JWTPayload
+  user?: JWTPayload
 ) {
   try {
-    // Obtener parámetros de consulta
-    const url = new URL(request.url);
-    const limitParam = url.searchParams.get("limit");
-    const limit = limitParam ? parseInt(limitParam) : 5;
+    // Obtener el controlador del contenedor de inversify
+    const container = getContainer();
+    const timeController = container.get<TimeController>(TYPES.TimeController);
 
-    // Obtener actividades recientes
-    const activities = await getRecentActivities(user.userId, limit);
-
-    return NextResponse.json({
-      activities: activities.map((activity) => ({
-        id: activity.id,
-        type: activity.entryType,
-        timestamp: activity.timestamp,
-        date: activity.date,
-        timezone: activity.timezone,
-        isValid: activity.isValid,
-      })),
-    });
+    // Delegar al controlador
+    return await timeController.getRecentActivities(request, user!.userId);
   } catch (error) {
-    console.error("Error en endpoint recent-activities:", error);
+    console.error("Error en time/recent-activities route:", error);
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }
@@ -37,11 +29,10 @@ async function getRecentActivitiesHandler(
   }
 }
 
-// Combinar middlewares - solo usuarios con permisos de lectura pueden ver actividades
-const getRecentActivitiesWithAuth = withPermissions([
-  PERMISSIONS.TIME_TRACKING.READ_OWN,
-])(getRecentActivitiesHandler);
-const getRecentActivitiesWithCors = withCors(getRecentActivitiesWithAuth);
+// OPTIONS handler usando el helper reutilizable
+export const OPTIONS = quickOptions("RECENT-ACTIVITIES");
 
-export const GET = getRecentActivitiesWithCors;
-export const OPTIONS = getRecentActivitiesWithCors;
+// Solo usuarios con permisos de lectura pueden ver actividades
+export const GET = protectApi({
+  permissions: [PERMISSIONS.TIME_TRACKING.READ_OWN],
+})(getRecentActivitiesHandler);

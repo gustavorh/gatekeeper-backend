@@ -1,40 +1,25 @@
+import "reflect-metadata";
 import { NextRequest, NextResponse } from "next/server";
-import { withPermissions } from "@/lib/middleware";
+
 import { JWTPayload } from "@/lib/auth";
-import { withCors } from "@/lib/cors";
-import { startLunch } from "@/lib/time-tracking";
+import { protectApi, ADMIN_ONLY, PUBLIC_ROUTE } from "@/lib/auth-middleware";
+
+import { getContainer } from "@/config/container-helper";
+import { TYPES } from "@/types";
+import { TimeController } from "@/controllers/TimeController";
 import { PERMISSIONS } from "@/lib/rbac-init";
+import { quickOptions } from "@/lib/cors-helper";
 
-async function startLunchHandler(request: NextRequest, user: JWTPayload) {
+async function startLunchHandler(request: NextRequest, user?: JWTPayload) {
   try {
-    const body = await request.json();
-    const { timestamp } = body;
+    // Obtener el controlador del contenedor de inversify
+    const container = getContainer();
+    const timeController = container.get<TimeController>(TYPES.TimeController);
 
-    // Convertir timestamp si se proporciona
-    const lunchTime = timestamp ? new Date(timestamp) : new Date();
-
-    // Ejecutar start-lunch
-    const result = await startLunch(user.userId, lunchTime);
-
-    if (!result.success) {
-      return NextResponse.json(
-        {
-          error: result.message,
-          validationErrors: result.validationErrors,
-        },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: result.message,
-      session: result.session,
-      entry: result.entry,
-      buttonStates: result.buttonStates,
-    });
+    // Delegar al controlador
+    return await timeController.startLunch(request, user!.userId);
   } catch (error) {
-    console.error("Error en endpoint start-lunch:", error);
+    console.error("Error en start-lunch route:", error);
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }
@@ -42,11 +27,10 @@ async function startLunchHandler(request: NextRequest, user: JWTPayload) {
   }
 }
 
-// Combinar middlewares - solo usuarios con permisos de escritura pueden iniciar almuerzo
-const startLunchWithAuth = withPermissions([
-  PERMISSIONS.TIME_TRACKING.WRITE_OWN,
-])(startLunchHandler);
-const startLunchWithCors = withCors(startLunchWithAuth);
+// OPTIONS handler usando el helper reutilizable
+export const OPTIONS = quickOptions("START-LUNCH");
 
-export const POST = startLunchWithCors;
-export const OPTIONS = startLunchWithCors;
+// Solo usuarios con permisos de escritura pueden iniciar lunch
+export const POST = protectApi({
+  permissions: [PERMISSIONS.TIME_TRACKING.WRITE_OWN],
+})(startLunchHandler);

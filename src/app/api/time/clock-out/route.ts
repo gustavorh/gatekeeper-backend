@@ -1,41 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withPermissions } from "@/lib/middleware";
+
 import { JWTPayload } from "@/lib/auth";
-import { withCors } from "@/lib/cors";
-import { clockOut } from "@/lib/time-tracking";
+import { protectApi, ADMIN_ONLY, PUBLIC_ROUTE } from "@/lib/auth-middleware";
+
+import { getContainer } from "@/config/container-helper";
+import { TYPES } from "@/types";
+import { TimeController } from "@/controllers/TimeController";
 import { PERMISSIONS } from "@/lib/rbac-init";
+import { quickOptions } from "@/lib/cors-helper";
 
-async function clockOutHandler(request: NextRequest, user: JWTPayload) {
+async function clockOutHandler(request: NextRequest, user?: JWTPayload) {
   try {
-    const body = await request.json();
-    const { timestamp } = body;
+    // Obtener el controlador del contenedor de inversify
+    const container = getContainer();
+    const timeController = container.get<TimeController>(TYPES.TimeController);
 
-    // Convertir timestamp si se proporciona
-    const clockOutTime = timestamp ? new Date(timestamp) : new Date();
-
-    // Ejecutar clock-out
-    const result = await clockOut(user.userId, clockOutTime);
-
-    if (!result.success) {
-      return NextResponse.json(
-        {
-          error: result.message,
-          validationErrors: result.validationErrors,
-        },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: result.message,
-      session: result.session,
-      entry: result.entry,
-      buttonStates: result.buttonStates,
-      totalHours: result.session?.totalWorkHours || 0,
-    });
+    // Delegar al controlador
+    return await timeController.clockOut(request, user!.userId);
   } catch (error) {
-    console.error("Error en endpoint clock-out:", error);
+    console.error("Error en clock-out route:", error);
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }
@@ -43,11 +26,10 @@ async function clockOutHandler(request: NextRequest, user: JWTPayload) {
   }
 }
 
-// Combinar middlewares - solo usuarios con permisos de time tracking pueden hacer clock-out
-const clockOutWithAuth = withPermissions([PERMISSIONS.TIME_TRACKING.WRITE_OWN])(
-  clockOutHandler
-);
-const clockOutWithCors = withCors(clockOutWithAuth);
+// OPTIONS handler usando el helper reutilizable
+export const OPTIONS = quickOptions("CLOCK-OUT");
 
-export const POST = clockOutWithCors;
-export const OPTIONS = clockOutWithCors;
+// Solo usuarios con permisos de escritura pueden hacer clock-out
+export const POST = protectApi({
+  permissions: [PERMISSIONS.TIME_TRACKING.WRITE_OWN],
+})(clockOutHandler);

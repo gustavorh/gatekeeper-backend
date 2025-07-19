@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withCors } from "@/lib/cors";
+import { PUBLIC_ROUTE } from "@/lib/auth-middleware";
 
 async function handler(request: NextRequest) {
-  return NextResponse.json({ message: "Hello world!" });
+  return NextResponse.json({
+    message: "Gatekeeper API - Hello world!",
+    version: "1.0.0",
+    status: "active",
+    cors: "enabled",
+  });
 }
 
-export const GET = withCors(handler);
-export const OPTIONS = withCors(handler);
+// API root es una ruta pública - CORS manejado por middleware global
+export const GET = PUBLIC_ROUTE(handler);

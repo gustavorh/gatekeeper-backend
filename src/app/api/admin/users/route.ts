@@ -1,74 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withRoles } from "@/lib/middleware";
+
 import { JWTPayload } from "@/lib/auth";
-import { withCors } from "@/lib/cors";
-import { db } from "@/lib/db";
-import { users, userRoles, roles } from "@/lib/schema";
-import { eq, and } from "drizzle-orm";
+import { protectApi, ADMIN_ONLY, PUBLIC_ROUTE } from "@/lib/auth-middleware";
+
+import { getContainer } from "@/config/container-helper";
+import { TYPES } from "@/types";
+import { AdminController } from "@/controllers/AdminController";
+import { quickOptions } from "@/lib/cors-helper";
 
 // GET: Listar todos los usuarios con sus roles
-async function getUsersHandler(request: NextRequest, user: JWTPayload) {
+async function getUsersHandler(request: NextRequest, user?: JWTPayload) {
   try {
-    const url = new URL(request.url);
-    const limitParam = url.searchParams.get("limit");
-    const offsetParam = url.searchParams.get("offset");
-
-    const limit = limitParam ? Math.min(parseInt(limitParam), 100) : 50; // Máximo 100
-    const offset = offsetParam ? parseInt(offsetParam) : 0;
-
-    // Obtener usuarios con paginación
-    const allUsers = await db
-      .select({
-        id: users.id,
-        rut: users.rut,
-        nombre: users.nombre,
-        apellido_paterno: users.apellido_paterno,
-        apellido_materno: users.apellido_materno,
-        email: users.email,
-        createdAt: users.createdAt,
-        updatedAt: users.updatedAt,
-      })
-      .from(users)
-      .limit(limit)
-      .offset(offset);
-
-    // Obtener roles para cada usuario
-    const usersWithRoles = await Promise.all(
-      allUsers.map(async (user) => {
-        const userRoleData = await db
-          .select({
-            roleId: roles.id,
-            roleName: roles.name,
-            roleDescription: roles.description,
-            assignedAt: userRoles.assignedAt,
-          })
-          .from(userRoles)
-          .innerJoin(roles, eq(userRoles.roleId, roles.id))
-          .where(
-            and(
-              eq(userRoles.userId, user.id),
-              eq(userRoles.isActive, true),
-              eq(roles.isActive, true)
-            )
-          );
-
-        return {
-          ...user,
-          roles: userRoleData,
-        };
-      })
+    // Obtener el controlador del contenedor de inversify
+    const container = getContainer();
+    const adminController = container.get<AdminController>(
+      TYPES.AdminController
     );
 
-    return NextResponse.json({
-      users: usersWithRoles,
-      pagination: {
-        limit,
-        offset,
-        total: usersWithRoles.length,
-      },
-    });
+    // Delegar al controlador
+    return await adminController.getUsers(request);
   } catch (error) {
-    console.error("Error obteniendo usuarios:", error);
+    console.error("Error en admin/users route:", error);
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }
@@ -76,9 +28,8 @@ async function getUsersHandler(request: NextRequest, user: JWTPayload) {
   }
 }
 
-// Solo administradores pueden ver la lista de usuarios
-const getUsersWithAuth = withRoles(["admin"])(getUsersHandler);
-const getUsersWithCors = withCors(getUsersWithAuth);
+// OPTIONS handler usando el helper reutilizable
+export const OPTIONS = quickOptions("ADMIN-USERS");
 
-export const GET = getUsersWithCors;
-export const OPTIONS = getUsersWithCors;
+// Solo administradores pueden ver los usuarios
+export const GET = ADMIN_ONLY(getUsersHandler);

@@ -1,41 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withPermissions } from "@/lib/middleware";
+
 import { JWTPayload } from "@/lib/auth";
-import { withCors } from "@/lib/cors";
-import { getTodaySession } from "@/lib/time-tracking";
+import { protectApi, ADMIN_ONLY, PUBLIC_ROUTE } from "@/lib/auth-middleware";
+
+import { getContainer } from "@/config/container-helper";
+import { TYPES } from "@/types";
+import { TimeController } from "@/controllers/TimeController";
 import { PERMISSIONS } from "@/lib/rbac-init";
+import { quickOptions } from "@/lib/cors-helper";
 
-async function getTodaySessionHandler(request: NextRequest, user: JWTPayload) {
+async function getTodaySessionHandler(request: NextRequest, user?: JWTPayload) {
   try {
-    // Obtener sesión de hoy
-    const todaySession = await getTodaySession(user.userId);
+    // Obtener el controlador del contenedor de inversify
+    const container = getContainer();
+    const timeController = container.get<TimeController>(TYPES.TimeController);
 
-    if (!todaySession) {
-      return NextResponse.json({
-        session: null,
-        workedHours: 0,
-        lunchDuration: 0,
-        remainingHours: 8,
-        status: "clocked_out",
-      });
-    }
-
-    // Calcular horas restantes (basado en jornada de 8 horas)
-    const remainingHours = Math.max(0, 8 - todaySession.totalWorkedHours);
-
-    return NextResponse.json({
-      session: todaySession.session,
-      workedHours: todaySession.totalWorkedHours,
-      lunchDuration: todaySession.totalLunchMinutes,
-      remainingHours,
-      status: todaySession.currentStatus,
-      canClockIn: todaySession.canClockIn,
-      canClockOut: todaySession.canClockOut,
-      canStartLunch: todaySession.canStartLunch,
-      canResumeShift: todaySession.canResumeShift,
-    });
+    // Delegar al controlador
+    return await timeController.getTodaySession(request, user!.userId);
   } catch (error) {
-    console.error("Error en endpoint today-session:", error);
+    console.error("Error en time/today-session route:", error);
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }
@@ -43,11 +26,10 @@ async function getTodaySessionHandler(request: NextRequest, user: JWTPayload) {
   }
 }
 
-// Combinar middlewares - solo usuarios con permisos de lectura pueden ver sesión actual
-const getTodaySessionWithAuth = withPermissions([
-  PERMISSIONS.TIME_TRACKING.READ_OWN,
-])(getTodaySessionHandler);
-const getTodaySessionWithCors = withCors(getTodaySessionWithAuth);
+// OPTIONS handler usando el helper reutilizable
+export const OPTIONS = quickOptions("TODAY-SESSION");
 
-export const GET = getTodaySessionWithCors;
-export const OPTIONS = getTodaySessionWithCors;
+// Solo usuarios con permisos de lectura pueden ver sesión actual
+export const GET = protectApi({
+  permissions: [PERMISSIONS.TIME_TRACKING.READ_OWN],
+})(getTodaySessionHandler);

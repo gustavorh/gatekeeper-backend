@@ -1,32 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withPermissions } from "@/lib/middleware";
+
 import { JWTPayload } from "@/lib/auth";
-import { withCors } from "@/lib/cors";
-import { getCurrentStatus } from "@/lib/time-tracking";
+import { protectApi, ADMIN_ONLY, PUBLIC_ROUTE } from "@/lib/auth-middleware";
+
+import { getContainer } from "@/config/container-helper";
+import { TYPES } from "@/types";
+import { TimeController } from "@/controllers/TimeController";
 import { PERMISSIONS } from "@/lib/rbac-init";
+import { quickOptions } from "@/lib/cors-helper";
 
-async function getCurrentStatusHandler(request: NextRequest, user: JWTPayload) {
+async function getCurrentStatusHandler(
+  request: NextRequest,
+  user?: JWTPayload
+) {
   try {
-    // Obtener estado actual
-    const currentStatus = await getCurrentStatus(user.userId);
+    // Obtener el controlador del contenedor de inversify
+    const container = getContainer();
+    const timeController = container.get<TimeController>(TYPES.TimeController);
 
-    return NextResponse.json({
-      status: currentStatus.status,
-      session: currentStatus.session,
-      buttonStates: currentStatus.buttonStates,
-      canClockIn: currentStatus.buttonStates.clockIn.enabled,
-      canClockOut: currentStatus.buttonStates.clockOut.enabled,
-      canStartLunch: currentStatus.buttonStates.startLunch.enabled,
-      canResumeShift: currentStatus.buttonStates.resumeShift.enabled,
-      restrictions: [
-        !currentStatus.buttonStates.clockIn.enabled &&
-          currentStatus.buttonStates.clockIn.reason,
-        !currentStatus.buttonStates.startLunch.enabled &&
-          currentStatus.buttonStates.startLunch.reason,
-      ].filter(Boolean),
-    });
+    // Delegar al controlador
+    return await timeController.getCurrentStatus(request, user!.userId);
   } catch (error) {
-    console.error("Error en endpoint current-status:", error);
+    console.error("Error en current-status route:", error);
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }
@@ -34,11 +29,10 @@ async function getCurrentStatusHandler(request: NextRequest, user: JWTPayload) {
   }
 }
 
-// Combinar middlewares - solo usuarios con permisos de lectura pueden ver status
-const getCurrentStatusWithAuth = withPermissions([
-  PERMISSIONS.TIME_TRACKING.READ_OWN,
-])(getCurrentStatusHandler);
-const getCurrentStatusWithCors = withCors(getCurrentStatusWithAuth);
+// OPTIONS handler usando el helper reutilizable
+export const OPTIONS = quickOptions("CURRENT-STATUS");
 
-export const GET = getCurrentStatusWithCors;
-export const OPTIONS = getCurrentStatusWithCors;
+// Solo usuarios con permisos de lectura pueden ver status
+export const GET = protectApi({
+  permissions: [PERMISSIONS.TIME_TRACKING.READ_OWN],
+})(getCurrentStatusHandler);

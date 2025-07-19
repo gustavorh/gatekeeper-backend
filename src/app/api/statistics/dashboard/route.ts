@@ -1,35 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withAuth } from "@/lib/middleware";
 import { JWTPayload } from "@/lib/auth";
-import { withCors } from "@/lib/cors";
-import { getDashboardStats } from "@/lib/statistics";
+import { protectApi } from "@/lib/auth-middleware";
+import { getContainer } from "@/config/container-helper";
+import { TYPES } from "@/types";
+import { StatisticsController } from "@/controllers/StatisticsController";
+import { PERMISSIONS } from "@/lib/rbac-init";
+import { quickOptions } from "@/lib/cors-helper";
 
 async function getDashboardStatsHandler(
   request: NextRequest,
-  user: JWTPayload
+  user?: JWTPayload
 ) {
   try {
-    // Obtener estadísticas del dashboard
-    const stats = await getDashboardStats(user.userId);
+    // Obtener el controlador del contenedor de inversify
+    const container = getContainer();
+    const statisticsController = container.get<StatisticsController>(
+      TYPES.StatisticsController
+    );
 
-    return NextResponse.json({
-      weekStats: {
-        totalHours: stats.weekStats.totalHours,
-        totalDays: stats.weekStats.totalDays,
-        overtimeHours: stats.weekStats.overtimeHours,
-      },
-      monthStats: {
-        totalHours: stats.monthStats.totalHours,
-        totalDays: stats.monthStats.totalDays,
-        overtimeHours: stats.monthStats.overtimeHours,
-      },
-      averageEntryTime: stats.averageEntryTime,
-      averageExitTime: stats.averageExitTime,
-      averageLunchDuration: stats.averageLunchDuration,
-      complianceScore: stats.complianceScore,
-    });
+    // Delegar al controlador - el middleware garantiza que user existe
+    return await statisticsController.getDashboard(request, user!.userId);
   } catch (error) {
-    console.error("Error en endpoint dashboard stats:", error);
+    console.error("Error en statistics/dashboard route:", error);
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }
@@ -37,9 +29,10 @@ async function getDashboardStatsHandler(
   }
 }
 
-// Combinar middlewares
-const getDashboardStatsWithAuth = withAuth(getDashboardStatsHandler);
-const getDashboardStatsWithCors = withCors(getDashboardStatsWithAuth);
+// OPTIONS handler usando el helper reutilizable
+export const OPTIONS = quickOptions("DASHBOARD");
 
-export const GET = getDashboardStatsWithCors;
-export const OPTIONS = getDashboardStatsWithCors;
+// Requiere permisos de lectura de estadísticas propias
+export const GET = protectApi({
+  permissions: [PERMISSIONS.STATISTICS.READ_OWN],
+})(getDashboardStatsHandler);

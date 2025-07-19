@@ -1,67 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withPermissions } from "@/lib/middleware";
+
 import { JWTPayload } from "@/lib/auth";
-import { withCors } from "@/lib/cors";
-import { getUserSessions } from "@/lib/time-tracking";
+import { protectApi, ADMIN_ONLY, PUBLIC_ROUTE } from "@/lib/auth-middleware";
+
+import { getContainer } from "@/config/container-helper";
+import { TYPES } from "@/types";
+import { TimeController } from "@/controllers/TimeController";
 import { PERMISSIONS } from "@/lib/rbac-init";
+import { quickOptions } from "@/lib/cors-helper";
 
-async function getSessionsHandler(request: NextRequest, user: JWTPayload) {
+async function getSessionsHandler(request: NextRequest, user?: JWTPayload) {
   try {
-    // Obtener parámetros de consulta
-    const url = new URL(request.url);
-    const pageParam = url.searchParams.get("page");
-    const limitParam = url.searchParams.get("limit");
-    const startDateParam = url.searchParams.get("startDate");
-    const endDateParam = url.searchParams.get("endDate");
+    // Obtener el controlador del contenedor de inversify
+    const container = getContainer();
+    const timeController = container.get<TimeController>(TYPES.TimeController);
 
-    const page = pageParam ? parseInt(pageParam) : 1;
-    const limit = limitParam ? parseInt(limitParam) : 10;
-    const startDate = startDateParam || undefined;
-    const endDate = endDateParam || undefined;
-
-    // Validar parámetros
-    if (page < 1 || limit < 1 || limit > 100) {
-      return NextResponse.json(
-        { error: "Parámetros de paginación inválidos" },
-        { status: 400 }
-      );
-    }
-
-    // Obtener sesiones del usuario
-    const result = await getUserSessions(
-      user.userId,
-      page,
-      limit,
-      startDate,
-      endDate
-    );
-
-    return NextResponse.json({
-      sessions: result.sessions.map((session) => ({
-        id: session.id,
-        date: session.date,
-        clockInTime: session.clockInTime,
-        clockOutTime: session.clockOutTime,
-        lunchStartTime: session.lunchStartTime,
-        lunchEndTime: session.lunchEndTime,
-        totalWorkHours: session.totalWorkHours,
-        totalLunchMinutes: session.totalLunchMinutes,
-        status: session.status,
-        isOvertimeDay: session.isOvertimeDay,
-        overtimeMinutes: session.overtimeMinutes,
-        isValidSession: session.isValidSession,
-      })),
-      pagination: {
-        currentPage: result.currentPage,
-        totalPages: result.totalPages,
-        total: result.total,
-        limit: limit,
-        hasNextPage: result.currentPage < result.totalPages,
-        hasPreviousPage: result.currentPage > 1,
-      },
-    });
+    // Delegar al controlador
+    return await timeController.getSessions(request, user!.userId);
   } catch (error) {
-    console.error("Error en endpoint sessions:", error);
+    console.error("Error en time/sessions route:", error);
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }
@@ -69,11 +26,10 @@ async function getSessionsHandler(request: NextRequest, user: JWTPayload) {
   }
 }
 
-// Combinar middlewares - solo usuarios con permisos de lectura pueden ver sus sesiones
-const getSessionsWithAuth = withPermissions([
-  PERMISSIONS.TIME_TRACKING.READ_OWN,
-])(getSessionsHandler);
-const getSessionsWithCors = withCors(getSessionsWithAuth);
+// OPTIONS handler usando el helper reutilizable
+export const OPTIONS = quickOptions("TIME-SESSIONS");
 
-export const GET = getSessionsWithCors;
-export const OPTIONS = getSessionsWithCors;
+// Solo usuarios con permisos de lectura pueden ver sus sesiones
+export const GET = protectApi({
+  permissions: [PERMISSIONS.TIME_TRACKING.READ_OWN],
+})(getSessionsHandler);

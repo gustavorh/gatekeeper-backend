@@ -14,6 +14,8 @@ export interface JWTPayload {
   email?: string;
   roles: string[];
   permissions: string[];
+  iat?: number; // issued at
+  exp?: number; // expiration time
 }
 
 export function generateToken(payload: JWTPayload): string {
@@ -24,7 +26,7 @@ export function generateToken(payload: JWTPayload): string {
 }
 
 export async function generateTokenWithRoles(
-  userPayload: Omit<JWTPayload, "roles" | "permissions">
+  userPayload: Omit<JWTPayload, "roles" | "permissions" | "iat" | "exp">
 ): Promise<string> {
   const userRoles = await getUserRoles(userPayload.userId);
 
@@ -47,9 +49,61 @@ export async function generateTokenWithRoles(
 
 export function verifyToken(token: string): JWTPayload | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as JWTPayload;
+    // Verificar y decodificar el token
+    const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
+
+    // Validaciones adicionales de seguridad
+    if (!decoded.userId || !decoded.rut) {
+      console.error("❌ Token missing required fields");
+      return null;
+    }
+
+    // Verificar que el token no esté próximo a expirar (menos de 5 minutos)
+    if (decoded.exp && decoded.exp * 1000 < Date.now() + 5 * 60 * 1000) {
+      console.warn("⚠️ Token expires soon");
+      // Aunque esté próximo a expirar, si es válido lo aceptamos
+      // El cliente debería renovar el token
+    }
+
+    return decoded;
+  } catch (error) {
+    if (error instanceof jwt.TokenExpiredError) {
+      console.error("❌ Token expired");
+    } else if (error instanceof jwt.JsonWebTokenError) {
+      console.error("❌ Invalid token format");
+    } else {
+      console.error("❌ Token verification failed:", error);
+    }
+    return null;
+  }
+}
+
+/**
+ * Valida que un token tenga una estructura válida sin verificar la firma
+ * Útil para debugging o análisis de tokens
+ */
+export function decodeTokenWithoutVerification(
+  token: string
+): JWTPayload | null {
+  try {
+    return jwt.decode(token) as JWTPayload;
   } catch (error) {
     return null;
+  }
+}
+
+/**
+ * Verifica si un token necesita renovación (expira en menos de 1 hora)
+ */
+export function shouldRenewToken(token: string): boolean {
+  try {
+    const decoded = jwt.decode(token) as JWTPayload;
+    if (!decoded.exp) return true;
+
+    const oneHourFromNow = Date.now() + 60 * 60 * 1000;
+    return decoded.exp * 1000 < oneHourFromNow;
+  } catch {
+    return true;
   }
 }
 
@@ -98,26 +152,20 @@ export function validateRutDigit(rut: string): boolean {
     let sum = 0;
     let multiplier = 2;
 
-    // Multiplicar cada dígito de derecha a izquierda
+    // Iterar desde el último dígito hacia el primero
     for (let i = rutNumber.length - 1; i >= 0; i--) {
       sum += parseInt(rutNumber[i]) * multiplier;
       multiplier = multiplier === 7 ? 2 : multiplier + 1;
     }
 
-    // Calcular el resto de la división por 11
     const remainder = sum % 11;
+    const expectedCheckDigit =
+      remainder === 0
+        ? "0"
+        : remainder === 1
+        ? "K"
+        : (11 - remainder).toString();
 
-    // Determinar el dígito verificador esperado
-    let expectedCheckDigit: string;
-    if (remainder === 0) {
-      expectedCheckDigit = "0";
-    } else if (remainder === 1) {
-      expectedCheckDigit = "K";
-    } else {
-      expectedCheckDigit = (11 - remainder).toString();
-    }
-
-    // Comparar con el dígito verificador proporcionado
     return checkDigit === expectedCheckDigit;
   } catch (error) {
     return false;
