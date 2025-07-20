@@ -17,7 +17,7 @@ export class ResponseInterceptor<T>
     next: CallHandler,
   ): Observable<ApiResponse<T>> {
     const request = context.switchToHttp().getRequest();
-    const path = request.url;
+    const endpoint = request.url;
 
     return next.handle().pipe(
       map((data) => ({
@@ -25,7 +25,7 @@ export class ResponseInterceptor<T>
         message: this.getDefaultMessage(context),
         data,
         timestamp: new Date().toISOString(),
-        path,
+        endpoint,
       })),
     );
   }
