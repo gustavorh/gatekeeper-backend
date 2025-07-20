@@ -12,12 +12,16 @@ export const TYPES = {
   UserService: Symbol.for("UserService"),
   RoleService: Symbol.for("RoleService"),
   StatisticsService: Symbol.for("StatisticsService"),
+  AdminWorkSessionService: Symbol.for("AdminWorkSessionService"),
+  PermissionService: Symbol.for("PermissionService"),
 
   // Controllers
   AuthController: Symbol.for("AuthController"),
   TimeController: Symbol.for("TimeController"),
   AdminController: Symbol.for("AdminController"),
   StatisticsController: Symbol.for("StatisticsController"),
+  AdminWorkSessionController: Symbol.for("AdminWorkSessionController"),
+  PermissionController: Symbol.for("PermissionController"),
 
   // Utils
   DateUtils: Symbol.for("DateUtils"),
