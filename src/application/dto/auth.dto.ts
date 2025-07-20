@@ -34,17 +34,3 @@ export class RegisterDto {
   @IsNotEmpty()
   lastName: string;
 }
-
-export class AuthResponseDto {
-  user: {
-    id: string;
-    rut: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    isActive: boolean;
-    createdAt: Date;
-    updatedAt: Date;
-  };
-  token: string;
-}

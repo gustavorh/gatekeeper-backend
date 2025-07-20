@@ -15,4 +15,5 @@ export interface IPermissionRepository {
   findAll(): Promise<Permission[]>;
   update(id: string, permission: UpdatePermissionDto): Promise<Permission>;
   delete(id: string): Promise<void>;
+  findPermissionsByRole(roleId: string): Promise<Permission[]>;
 }

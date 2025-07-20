@@ -15,6 +15,8 @@ import {
 import { IUserRepository } from '../../domain/repositories/user.repository.interface';
 import { IRoleRepository } from '../../domain/repositories/role.repository.interface';
 import { User } from '../../domain/entities/user.entity';
+import { AuthResponse } from '../dto/response.dto';
+import { UserProfileService } from './user-profile.service';
 
 @Injectable()
 export class AuthService implements IAuthService {
@@ -24,9 +26,10 @@ export class AuthService implements IAuthService {
     @Inject('IRoleRepository')
     private readonly roleRepository: IRoleRepository,
     private readonly jwtService: JwtService,
+    private readonly userProfileService: UserProfileService,
   ) {}
 
-  async login(loginDto: LoginDto): Promise<AuthResult> {
+  async login(loginDto: LoginDto): Promise<AuthResponse> {
     const user = await this.userRepository.findByRut(loginDto.rut);
 
     if (!user || !user.isActive) {
@@ -43,14 +46,21 @@ export class AuthService implements IAuthService {
     }
 
     const token = this.generateToken(user);
+    const userWithRoles = await this.userProfileService.getUserWithRoles(
+      user.id,
+    );
+
+    if (!userWithRoles) {
+      throw new UnauthorizedException('User profile not found');
+    }
 
     return {
-      user: this.excludePassword(user),
+      user: userWithRoles,
       token,
     };
   }
 
-  async register(registerDto: RegisterDto): Promise<AuthResult> {
+  async register(registerDto: RegisterDto): Promise<AuthResponse> {
     const existingUserByRut = await this.userRepository.findByRut(
       registerDto.rut,
     );
@@ -81,9 +91,16 @@ export class AuthService implements IAuthService {
     }
 
     const token = this.generateToken(user);
+    const userWithRoles = await this.userProfileService.getUserWithRoles(
+      user.id,
+    );
+
+    if (!userWithRoles) {
+      throw new UnauthorizedException('User profile not found');
+    }
 
     return {
-      user: this.excludePassword(user),
+      user: userWithRoles,
       token,
     };
   }
