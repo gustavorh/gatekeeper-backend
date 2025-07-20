@@ -1,8 +1,9 @@
-import { Module } from '@nestjs/common';
+import { Module, OnModuleInit, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { drizzle } from 'drizzle-orm/mysql2';
 import * as mysql from 'mysql2/promise';
 import * as schema from './schema';
+import { initializeRoles } from '../../utils/init-roles';
 
 @Module({
   providers: [
@@ -62,4 +63,11 @@ import * as schema from './schema';
   ],
   exports: ['DATABASE', 'CONNECTION'],
 })
-export class DatabaseModule {}
+export class DatabaseModule implements OnModuleInit {
+  constructor(@Inject('DATABASE') private readonly db: any) {}
+
+  async onModuleInit() {
+    // Inicializar roles al arrancar la aplicación
+    //await initializeRoles(this.db);
+  }
+}

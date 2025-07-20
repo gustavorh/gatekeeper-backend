@@ -13,6 +13,7 @@ import {
   AuthResult,
 } from '../../domain/services/auth.service.interface';
 import { IUserRepository } from '../../domain/repositories/user.repository.interface';
+import { IRoleRepository } from '../../domain/repositories/role.repository.interface';
 import { User } from '../../domain/entities/user.entity';
 
 @Injectable()
@@ -20,6 +21,8 @@ export class AuthService implements IAuthService {
   constructor(
     @Inject('IUserRepository')
     private readonly userRepository: IUserRepository,
+    @Inject('IRoleRepository')
+    private readonly roleRepository: IRoleRepository,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -70,6 +73,12 @@ export class AuthService implements IAuthService {
       ...registerDto,
       password: hashedPassword,
     });
+
+    // Asignar automáticamente el rol "user" al usuario registrado
+    const userRole = await this.roleRepository.findByName('user');
+    if (userRole) {
+      await this.roleRepository.assignRoleToUser(user.id, userRole.id);
+    }
 
     const token = this.generateToken(user);
 

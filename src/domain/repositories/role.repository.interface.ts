@@ -7,4 +7,6 @@ export interface IRoleRepository {
   findAll(): Promise<Role[]>;
   update(id: string, role: UpdateRoleDto): Promise<Role>;
   delete(id: string): Promise<void>;
+  assignRoleToUser(userId: string, roleId: string): Promise<void>;
+  findUserRoles(userId: string): Promise<Role[]>;
 }
