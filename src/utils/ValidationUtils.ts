@@ -106,7 +106,16 @@ export class ValidationUtils implements IValidationUtils {
     timestamp: Date
   ): Promise<ValidationResult> {
     try {
-      // Validar regla de 1 hora desde el último clock-out
+      // 1. Validar que el usuario no tenga una sesión activa
+      const todaySession = await this.sessionRepo.findTodaySession(userId);
+      if (todaySession && todaySession.status === "active") {
+        return {
+          isValid: false,
+          error: "Ya tienes una sesión activa",
+        };
+      }
+
+      // 2. Validar regla de 1 hora desde el último clock-out
       const lastClockOut = await this.timeEntryRepo.findLastEntryByUserAndType(
         userId,
         "clock_out"

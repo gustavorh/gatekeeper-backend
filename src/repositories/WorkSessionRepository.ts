@@ -80,7 +80,10 @@ export class WorkSessionRepository
     date: Date
   ): Promise<WorkSession | null> {
     try {
-      const dateStr = date.toISOString().split("T")[0];
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      const dateStr = `${year}-${month}-${day}`;
 
       const results = await db
         .select()
@@ -88,7 +91,7 @@ export class WorkSessionRepository
         .where(
           and(
             eq(workSessions.userId, userId),
-            sql`DATE(${workSessions.date}) = ${dateStr}`
+            sql`${workSessions.date} = ${dateStr}`
           )
         )
         .limit(1);
@@ -96,10 +99,10 @@ export class WorkSessionRepository
       return results.length > 0 ? (results[0] as WorkSession) : null;
     } catch (error) {
       console.error(
-        `Error finding session for user ${userId} on date ${date}:`,
+        `Error al buscar sesión para el usuario ${userId} en la fecha ${date}:`,
         error
       );
-      throw new Error("Failed to find session by user and date");
+      throw new Error("Error al buscar sesión por usuario y fecha");
     }
   }
 
