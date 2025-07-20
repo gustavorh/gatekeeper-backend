@@ -3,6 +3,7 @@ import { injectable, inject } from "inversify";
 import type { ITimeTrackingService } from "@/services/interfaces/ITimeTrackingService";
 import { TYPES } from "@/types";
 import { ClockActionRequestDTO } from "@/models/dtos";
+import { ResponseHelper } from "@/utils/ResponseHelper";
 
 @injectable()
 export class TimeController {
@@ -26,27 +27,30 @@ export class TimeController {
       );
 
       if (!result.success) {
-        return NextResponse.json(
-          {
-            error: result.message,
-            validationErrors: result.validationErrors,
-          },
-          { status: 400 }
+        const errors =
+          result.validationErrors?.map((error) => ({
+            message: String(error),
+          })) || [];
+
+        return ResponseHelper.validationError(
+          result.message || "Error en clock-in",
+          errors
         );
       }
 
-      return NextResponse.json({
-        success: true,
-        message: result.message,
-        session: result.session,
-        entry: result.entry,
-        buttonStates: result.buttonStates,
-      });
+      return ResponseHelper.operationSuccess(
+        result.message || "Clock-in realizado exitosamente",
+        {
+          session: result.session,
+          entry: result.entry,
+          buttonStates: result.buttonStates,
+        }
+      );
     } catch (error) {
       console.error("Error en endpoint clock-in:", error);
-      return NextResponse.json(
-        { error: "Error interno del servidor" },
-        { status: 500 }
+      return ResponseHelper.internalServerError(
+        "Error interno del servidor",
+        error as Error
       );
     }
   }
@@ -63,28 +67,31 @@ export class TimeController {
       );
 
       if (!result.success) {
-        return NextResponse.json(
-          {
-            error: result.message,
-            validationErrors: result.validationErrors,
-          },
-          { status: 400 }
+        const errors =
+          result.validationErrors?.map((error) => ({
+            message: String(error),
+          })) || [];
+
+        return ResponseHelper.validationError(
+          result.message || "Error en clock-out",
+          errors
         );
       }
 
-      return NextResponse.json({
-        success: true,
-        message: result.message,
-        session: result.session,
-        entry: result.entry,
-        buttonStates: result.buttonStates,
-        totalHours: result.session?.totalWorkHours || 0,
-      });
+      return ResponseHelper.operationSuccess(
+        result.message || "Clock-out realizado exitosamente",
+        {
+          session: result.session,
+          entry: result.entry,
+          buttonStates: result.buttonStates,
+          totalHours: result.session?.totalWorkHours || 0,
+        }
+      );
     } catch (error) {
       console.error("Error en endpoint clock-out:", error);
-      return NextResponse.json(
-        { error: "Error interno del servidor" },
-        { status: 500 }
+      return ResponseHelper.internalServerError(
+        "Error interno del servidor",
+        error as Error
       );
     }
   }
@@ -104,27 +111,30 @@ export class TimeController {
       );
 
       if (!result.success) {
-        return NextResponse.json(
-          {
-            error: result.message,
-            validationErrors: result.validationErrors,
-          },
-          { status: 400 }
+        const errors =
+          result.validationErrors?.map((error) => ({
+            message: String(error),
+          })) || [];
+
+        return ResponseHelper.validationError(
+          result.message || "Error al iniciar almuerzo",
+          errors
         );
       }
 
-      return NextResponse.json({
-        success: true,
-        message: result.message,
-        session: result.session,
-        entry: result.entry,
-        buttonStates: result.buttonStates,
-      });
+      return ResponseHelper.operationSuccess(
+        result.message || "Almuerzo iniciado exitosamente",
+        {
+          session: result.session,
+          entry: result.entry,
+          buttonStates: result.buttonStates,
+        }
+      );
     } catch (error) {
       console.error("Error en endpoint start-lunch:", error);
-      return NextResponse.json(
-        { error: "Error interno del servidor" },
-        { status: 500 }
+      return ResponseHelper.internalServerError(
+        "Error interno del servidor",
+        error as Error
       );
     }
   }
@@ -147,28 +157,31 @@ export class TimeController {
       );
 
       if (!result.success) {
-        return NextResponse.json(
-          {
-            error: result.message,
-            validationErrors: result.validationErrors,
-          },
-          { status: 400 }
+        const errors =
+          result.validationErrors?.map((error) => ({
+            message: String(error),
+          })) || [];
+
+        return ResponseHelper.validationError(
+          result.message || "Error al reanudar turno",
+          errors
         );
       }
 
-      return NextResponse.json({
-        success: true,
-        message: result.message,
-        session: result.session,
-        entry: result.entry,
-        buttonStates: result.buttonStates,
-        lunchDuration: result.session?.totalLunchMinutes || 0,
-      });
+      return ResponseHelper.operationSuccess(
+        result.message || "Turno reanudado exitosamente",
+        {
+          session: result.session,
+          entry: result.entry,
+          buttonStates: result.buttonStates,
+          lunchDuration: result.session?.totalLunchMinutes || 0,
+        }
+      );
     } catch (error) {
       console.error("Error en endpoint resume-shift:", error);
-      return NextResponse.json(
-        { error: "Error interno del servidor" },
-        { status: 500 }
+      return ResponseHelper.internalServerError(
+        "Error interno del servidor",
+        error as Error
       );
     }
   }
@@ -181,26 +194,29 @@ export class TimeController {
       // Obtener el estado actual a través del servicio
       const result = await this.timeTrackingService.getCurrentStatus(userId);
 
-      return NextResponse.json({
-        status: result.status,
-        session: result.session,
-        buttonStates: result.buttonStates,
-        canClockIn: result.buttonStates.clockIn.enabled,
-        canClockOut: result.buttonStates.clockOut.enabled,
-        canStartLunch: result.buttonStates.startLunch.enabled,
-        canResumeShift: result.buttonStates.resumeShift.enabled,
-        restrictions: [
-          !result.buttonStates.clockIn.enabled &&
-            result.buttonStates.clockIn.reason,
-          !result.buttonStates.startLunch.enabled &&
-            result.buttonStates.startLunch.reason,
-        ].filter(Boolean),
-      });
+      return ResponseHelper.success(
+        {
+          status: result.status,
+          session: result.session,
+          buttonStates: result.buttonStates,
+          canClockIn: result.buttonStates.clockIn.enabled,
+          canClockOut: result.buttonStates.clockOut.enabled,
+          canStartLunch: result.buttonStates.startLunch.enabled,
+          canResumeShift: result.buttonStates.resumeShift.enabled,
+          restrictions: [
+            !result.buttonStates.clockIn.enabled &&
+              result.buttonStates.clockIn.reason,
+            !result.buttonStates.startLunch.enabled &&
+              result.buttonStates.startLunch.reason,
+          ].filter(Boolean),
+        },
+        "Estado actual obtenido exitosamente"
+      );
     } catch (error) {
       console.error("Error en endpoint current-status:", error);
-      return NextResponse.json(
-        { error: "Error interno del servidor" },
-        { status: 500 }
+      return ResponseHelper.internalServerError(
+        "Error interno del servidor",
+        error as Error
       );
     }
   }
@@ -216,34 +232,40 @@ export class TimeController {
       );
 
       if (!todaySession) {
-        return NextResponse.json({
-          session: null,
-          workedHours: 0,
-          lunchDuration: 0,
-          remainingHours: 8,
-          status: "clocked_out",
-        });
+        return ResponseHelper.success(
+          {
+            session: null,
+            workedHours: 0,
+            lunchDuration: 0,
+            remainingHours: 8,
+            status: "clocked_out",
+          },
+          "No hay sesión activa para hoy"
+        );
       }
 
       // Calcular horas restantes (basado en jornada de 8 horas)
       const remainingHours = Math.max(0, 8 - todaySession.workedHours);
 
-      return NextResponse.json({
-        session: todaySession.session,
-        workedHours: todaySession.workedHours,
-        lunchDuration: todaySession.lunchDuration,
-        remainingHours,
-        status: todaySession.status,
-        canClockIn: todaySession.canClockIn,
-        canClockOut: todaySession.canClockOut,
-        canStartLunch: todaySession.canStartLunch,
-        canResumeShift: todaySession.canResumeShift,
-      });
+      return ResponseHelper.success(
+        {
+          session: todaySession.session,
+          workedHours: todaySession.workedHours,
+          lunchDuration: todaySession.lunchDuration,
+          remainingHours,
+          status: todaySession.status,
+          canClockIn: todaySession.canClockIn,
+          canClockOut: todaySession.canClockOut,
+          canStartLunch: todaySession.canStartLunch,
+          canResumeShift: todaySession.canResumeShift,
+        },
+        "Sesión de hoy obtenida exitosamente"
+      );
     } catch (error) {
       console.error("Error en endpoint today-session:", error);
-      return NextResponse.json(
-        { error: "Error interno del servidor" },
-        { status: 500 }
+      return ResponseHelper.internalServerError(
+        "Error interno del servidor",
+        error as Error
       );
     }
   }
@@ -258,27 +280,37 @@ export class TimeController {
       const limitParam = url.searchParams.get("limit");
       const limit = limitParam ? parseInt(limitParam) : 5;
 
+      // Validar límite
+      if (limit < 1 || limit > 100) {
+        return ResponseHelper.validationError("Parámetro limit inválido", [
+          { field: "limit", message: "El límite debe estar entre 1 y 100" },
+        ]);
+      }
+
       // Obtener actividades recientes a través del servicio
       const activities = await this.timeTrackingService.getRecentActivities(
         userId,
         limit
       );
 
-      return NextResponse.json({
-        activities: activities.map((activity) => ({
-          id: activity.id,
-          type: activity.type,
-          timestamp: activity.timestamp,
-          date: activity.date,
-          timezone: activity.timezone,
-          isValid: activity.isValid,
-        })),
-      });
+      return ResponseHelper.success(
+        {
+          activities: activities.map((activity) => ({
+            id: activity.id,
+            type: activity.type,
+            timestamp: activity.timestamp,
+            date: activity.date,
+            timezone: activity.timezone,
+            isValid: activity.isValid,
+          })),
+        },
+        "Actividades recientes obtenidas exitosamente"
+      );
     } catch (error) {
       console.error("Error en endpoint recent-activities:", error);
-      return NextResponse.json(
-        { error: "Error interno del servidor" },
-        { status: 500 }
+      return ResponseHelper.internalServerError(
+        "Error interno del servidor",
+        error as Error
       );
     }
   }
@@ -301,10 +333,24 @@ export class TimeController {
       const endDate = endDateParam || undefined;
 
       // Validar parámetros
-      if (page < 1 || limit < 1 || limit > 100) {
-        return NextResponse.json(
-          { error: "Parámetros de paginación inválidos" },
-          { status: 400 }
+      const validationErrors = [];
+      if (page < 1) {
+        validationErrors.push({
+          field: "page",
+          message: "La página debe ser mayor a 0",
+        });
+      }
+      if (limit < 1 || limit > 100) {
+        validationErrors.push({
+          field: "limit",
+          message: "El límite debe estar entre 1 y 100",
+        });
+      }
+
+      if (validationErrors.length > 0) {
+        return ResponseHelper.validationError(
+          "Parámetros de paginación inválidos",
+          validationErrors
         );
       }
 
@@ -317,19 +363,21 @@ export class TimeController {
         endDate
       );
 
-      return NextResponse.json({
-        sessions: result.sessions.map((session) => ({
-          id: session.id,
-          date: session.date,
-          clockInTime: session.clockInTime,
-          clockOutTime: session.clockOutTime,
-          lunchStartTime: session.lunchStartTime,
-          lunchEndTime: session.lunchEndTime,
-          totalWorkHours: session.totalWorkHours,
-          totalLunchMinutes: session.totalLunchMinutes,
-          status: session.status,
-        })),
-        pagination: {
+      const sessionsData = result.sessions.map((session) => ({
+        id: session.id,
+        date: session.date,
+        clockInTime: session.clockInTime,
+        clockOutTime: session.clockOutTime,
+        lunchStartTime: session.lunchStartTime,
+        lunchEndTime: session.lunchEndTime,
+        totalWorkHours: session.totalWorkHours,
+        totalLunchMinutes: session.totalLunchMinutes,
+        status: session.status,
+      }));
+
+      return ResponseHelper.successWithPagination(
+        sessionsData,
+        {
           currentPage: result.currentPage,
           totalPages: result.totalPages,
           total: result.total,
@@ -337,12 +385,13 @@ export class TimeController {
           hasNextPage: result.currentPage < result.totalPages,
           hasPreviousPage: result.currentPage > 1,
         },
-      });
+        "Sesiones obtenidas exitosamente"
+      );
     } catch (error) {
       console.error("Error en endpoint sessions:", error);
-      return NextResponse.json(
-        { error: "Error interno del servidor" },
-        { status: 500 }
+      return ResponseHelper.internalServerError(
+        "Error interno del servidor",
+        error as Error
       );
     }
   }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { injectable, inject } from "inversify";
 import type { IStatisticsService } from "@/services/interfaces/IStatisticsService";
 import { TYPES } from "@/types";
+import { ResponseHelper } from "@/utils/ResponseHelper";
 
 @injectable()
 export class StatisticsController {
@@ -20,27 +21,30 @@ export class StatisticsController {
         userId
       );
 
-      return NextResponse.json({
-        weekStats: {
-          totalHours: dashboardStats.weekStats.totalHours,
-          totalDays: dashboardStats.weekStats.totalDays,
-          overtimeHours: dashboardStats.weekStats.overtimeHours,
+      return ResponseHelper.success(
+        {
+          weekStats: {
+            totalHours: dashboardStats.weekStats.totalHours,
+            totalDays: dashboardStats.weekStats.totalDays,
+            overtimeHours: dashboardStats.weekStats.overtimeHours,
+          },
+          monthStats: {
+            totalHours: dashboardStats.monthStats.totalHours,
+            totalDays: dashboardStats.monthStats.totalDays,
+            overtimeHours: dashboardStats.monthStats.overtimeHours,
+          },
+          averageEntryTime: dashboardStats.averageEntryTime,
+          averageExitTime: dashboardStats.averageExitTime,
+          averageLunchDuration: dashboardStats.averageLunchDuration,
+          complianceScore: dashboardStats.complianceScore,
         },
-        monthStats: {
-          totalHours: dashboardStats.monthStats.totalHours,
-          totalDays: dashboardStats.monthStats.totalDays,
-          overtimeHours: dashboardStats.monthStats.overtimeHours,
-        },
-        averageEntryTime: dashboardStats.averageEntryTime,
-        averageExitTime: dashboardStats.averageExitTime,
-        averageLunchDuration: dashboardStats.averageLunchDuration,
-        complianceScore: dashboardStats.complianceScore,
-      });
+        "Estadísticas del dashboard obtenidas exitosamente"
+      );
     } catch (error) {
       console.error("Error en endpoint dashboard stats:", error);
-      return NextResponse.json(
-        { error: "Error interno del servidor" },
-        { status: 500 }
+      return ResponseHelper.internalServerError(
+        "Error interno del servidor",
+        error as Error
       );
     }
   }
@@ -57,10 +61,13 @@ export class StatisticsController {
       if (dateParam) {
         date = new Date(dateParam);
         if (isNaN(date.getTime())) {
-          return NextResponse.json(
-            { error: "Formato de fecha inválido" },
-            { status: 400 }
-          );
+          return ResponseHelper.validationError("Formato de fecha inválido", [
+            {
+              field: "date",
+              code: "INVALID_FORMAT",
+              message: "El formato de fecha proporcionado es inválido",
+            },
+          ]);
         }
       }
 
@@ -69,18 +76,21 @@ export class StatisticsController {
         date
       );
 
-      return NextResponse.json({
-        weekStartDate: weeklyStats.weekStartDate,
-        totalHours: weeklyStats.totalHours,
-        totalDays: weeklyStats.totalDays,
-        overtimeHours: weeklyStats.overtimeHours,
-        sessions: weeklyStats.sessions,
-      });
+      return ResponseHelper.success(
+        {
+          weekStartDate: weeklyStats.weekStartDate,
+          totalHours: weeklyStats.totalHours,
+          totalDays: weeklyStats.totalDays,
+          overtimeHours: weeklyStats.overtimeHours,
+          sessions: weeklyStats.sessions,
+        },
+        "Estadísticas semanales obtenidas exitosamente"
+      );
     } catch (error) {
       console.error("Error en endpoint weekly stats:", error);
-      return NextResponse.json(
-        { error: "Error interno del servidor" },
-        { status: 500 }
+      return ResponseHelper.internalServerError(
+        "Error interno del servidor",
+        error as Error
       );
     }
   }
@@ -97,10 +107,13 @@ export class StatisticsController {
       if (dateParam) {
         date = new Date(dateParam);
         if (isNaN(date.getTime())) {
-          return NextResponse.json(
-            { error: "Formato de fecha inválido" },
-            { status: 400 }
-          );
+          return ResponseHelper.validationError("Formato de fecha inválido", [
+            {
+              field: "date",
+              code: "INVALID_FORMAT",
+              message: "El formato de fecha proporcionado es inválido",
+            },
+          ]);
         }
       }
 
@@ -109,19 +122,22 @@ export class StatisticsController {
         date
       );
 
-      return NextResponse.json({
-        monthStartDate: monthlyStats.monthStartDate,
-        totalHours: monthlyStats.totalHours,
-        totalDays: monthlyStats.totalDays,
-        overtimeHours: monthlyStats.overtimeHours,
-        averageHoursPerDay: monthlyStats.averageHoursPerDay,
-        complianceScore: monthlyStats.complianceScore,
-      });
+      return ResponseHelper.success(
+        {
+          monthStartDate: monthlyStats.monthStartDate,
+          totalHours: monthlyStats.totalHours,
+          totalDays: monthlyStats.totalDays,
+          overtimeHours: monthlyStats.overtimeHours,
+          averageHoursPerDay: monthlyStats.averageHoursPerDay,
+          complianceScore: monthlyStats.complianceScore,
+        },
+        "Estadísticas mensuales obtenidas exitosamente"
+      );
     } catch (error) {
       console.error("Error en endpoint monthly stats:", error);
-      return NextResponse.json(
-        { error: "Error interno del servidor" },
-        { status: 500 }
+      return ResponseHelper.internalServerError(
+        "Error interno del servidor",
+        error as Error
       );
     }
   }
@@ -135,28 +151,63 @@ export class StatisticsController {
       const startDateParam = url.searchParams.get("startDate");
       const endDateParam = url.searchParams.get("endDate");
 
-      if (!startDateParam || !endDateParam) {
-        return NextResponse.json(
-          { error: "startDate y endDate son requeridos" },
-          { status: 400 }
+      // Validar parámetros requeridos
+      const validationErrors = [];
+      if (!startDateParam) {
+        validationErrors.push({
+          field: "startDate",
+          message: "startDate es requerido",
+        });
+      }
+      if (!endDateParam) {
+        validationErrors.push({
+          field: "endDate",
+          message: "endDate es requerido",
+        });
+      }
+
+      if (validationErrors.length > 0) {
+        return ResponseHelper.validationError(
+          "Parámetros requeridos faltantes",
+          validationErrors
         );
       }
 
-      const startDate = new Date(startDateParam);
-      const endDate = new Date(endDateParam);
+      const startDate = new Date(startDateParam!);
+      const endDate = new Date(endDateParam!);
 
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-        return NextResponse.json(
-          { error: "Formato de fecha inválido" },
-          { status: 400 }
+      // Validar formato de fechas
+      if (isNaN(startDate.getTime())) {
+        validationErrors.push({
+          field: "startDate",
+          code: "INVALID_FORMAT",
+          message: "Formato de startDate inválido",
+        });
+      }
+      if (isNaN(endDate.getTime())) {
+        validationErrors.push({
+          field: "endDate",
+          code: "INVALID_FORMAT",
+          message: "Formato de endDate inválido",
+        });
+      }
+
+      if (validationErrors.length > 0) {
+        return ResponseHelper.validationError(
+          "Formato de fecha inválido",
+          validationErrors
         );
       }
 
+      // Validar lógica de fechas
       if (startDate >= endDate) {
-        return NextResponse.json(
-          { error: "startDate debe ser menor que endDate" },
-          { status: 400 }
-        );
+        return ResponseHelper.validationError("Rango de fechas inválido", [
+          {
+            field: "startDate",
+            code: "INVALID_RANGE",
+            message: "startDate debe ser menor que endDate",
+          },
+        ]);
       }
 
       const complianceScore =
@@ -166,18 +217,21 @@ export class StatisticsController {
           endDate
         );
 
-      return NextResponse.json({
-        complianceScore,
-        period: {
-          startDate: startDate.toISOString().split("T")[0],
-          endDate: endDate.toISOString().split("T")[0],
+      return ResponseHelper.success(
+        {
+          complianceScore,
+          period: {
+            startDate: startDate.toISOString().split("T")[0],
+            endDate: endDate.toISOString().split("T")[0],
+          },
         },
-      });
+        "Puntuación de cumplimiento calculada exitosamente"
+      );
     } catch (error) {
       console.error("Error en endpoint compliance score:", error);
-      return NextResponse.json(
-        { error: "Error interno del servidor" },
-        { status: 500 }
+      return ResponseHelper.internalServerError(
+        "Error interno del servidor",
+        error as Error
       );
     }
   }

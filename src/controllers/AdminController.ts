@@ -3,6 +3,7 @@ import { injectable, inject } from "inversify";
 import type { IUserService } from "@/services/interfaces/IUserService";
 import type { IRoleRepository } from "@/repositories/interfaces/IRoleRepository";
 import { TYPES } from "@/types";
+import { ResponseHelper } from "@/utils/ResponseHelper";
 
 @injectable()
 export class AdminController {
@@ -22,36 +23,44 @@ export class AdminController {
       const offset = offsetParam ? parseInt(offsetParam) : 0;
 
       // Validar parámetros
+      const validationErrors = [];
       if (limit < 1 || limit > 100) {
-        return NextResponse.json(
-          { error: "Limit debe estar entre 1 y 100" },
-          { status: 400 }
-        );
+        validationErrors.push({
+          field: "limit",
+          message: "Limit debe estar entre 1 y 100",
+        });
+      }
+      if (offset < 0) {
+        validationErrors.push({
+          field: "offset",
+          message: "Offset debe ser mayor o igual a 0",
+        });
       }
 
-      if (offset < 0) {
-        return NextResponse.json(
-          { error: "Offset debe ser mayor o igual a 0" },
-          { status: 400 }
+      if (validationErrors.length > 0) {
+        return ResponseHelper.validationError(
+          "Parámetros de consulta inválidos",
+          validationErrors
         );
       }
 
       const result = await this.userService.getAllUsers(limit, offset);
 
-      return NextResponse.json({
-        users: result.users,
-        total: result.total,
-        pagination: {
+      return ResponseHelper.successWithPagination(
+        result.users,
+        {
           limit,
           offset,
+          total: result.total,
           hasMore: result.users.length === limit,
         },
-      });
+        "Usuarios obtenidos exitosamente"
+      );
     } catch (error) {
       console.error("Error en endpoint admin/users:", error);
-      return NextResponse.json(
-        { error: "Error interno del servidor" },
-        { status: 500 }
+      return ResponseHelper.internalServerError(
+        "Error interno del servidor",
+        error as Error
       );
     }
   }
@@ -62,29 +71,26 @@ export class AdminController {
   ): Promise<NextResponse> {
     try {
       if (!userId || isNaN(userId)) {
-        return NextResponse.json(
-          { error: "ID de usuario inválido" },
-          { status: 400 }
-        );
+        return ResponseHelper.validationError("ID de usuario inválido", [
+          {
+            field: "userId",
+            message: "El ID de usuario debe ser un número válido",
+          },
+        ]);
       }
 
       const user = await this.userService.getUserWithRoles(userId);
 
       if (!user) {
-        return NextResponse.json(
-          { error: "Usuario no encontrado" },
-          { status: 404 }
-        );
+        return ResponseHelper.notFoundError("Usuario no encontrado");
       }
 
-      return NextResponse.json({
-        user,
-      });
+      return ResponseHelper.success({ user }, "Usuario obtenido exitosamente");
     } catch (error) {
       console.error(`Error en endpoint admin/users/${userId}:`, error);
-      return NextResponse.json(
-        { error: "Error interno del servidor" },
-        { status: 500 }
+      return ResponseHelper.internalServerError(
+        "Error interno del servidor",
+        error as Error
       );
     }
   }
@@ -94,23 +100,28 @@ export class AdminController {
     try {
       const allRoles = await this.roleRepo.findActiveRoles();
 
-      return NextResponse.json({
-        roles: allRoles.map((role) => ({
-          id: role.id,
-          name: role.name,
-          description: role.description,
-          permissions: role.permissions,
-          isActive: role.isActive,
-          createdAt: role.createdAt,
-          updatedAt: role.updatedAt,
-        })),
-        total: allRoles.length,
-      });
+      const rolesData = allRoles.map((role) => ({
+        id: role.id,
+        name: role.name,
+        description: role.description,
+        permissions: role.permissions,
+        isActive: role.isActive,
+        createdAt: role.createdAt,
+        updatedAt: role.updatedAt,
+      }));
+
+      return ResponseHelper.success(
+        {
+          roles: rolesData,
+          total: allRoles.length,
+        },
+        "Roles obtenidos exitosamente"
+      );
     } catch (error) {
       console.error("Error en endpoint admin/roles:", error);
-      return NextResponse.json(
-        { error: "Error interno del servidor" },
-        { status: 500 }
+      return ResponseHelper.internalServerError(
+        "Error interno del servidor",
+        error as Error
       );
     }
   }
@@ -136,23 +147,28 @@ export class AdminController {
       const userId = this.extractUserIdFromPath(url.pathname);
 
       if (!userId || isNaN(userId)) {
-        return NextResponse.json(
-          { error: "ID de usuario inválido" },
-          { status: 400 }
-        );
+        return ResponseHelper.validationError("ID de usuario inválido", [
+          {
+            field: "userId",
+            message: "El ID de usuario debe ser un número válido",
+          },
+        ]);
       }
 
       const result = await this.userService.getUserRoles(userId);
 
-      return NextResponse.json({
-        userId: result.userId,
-        roles: result.roles,
-      });
+      return ResponseHelper.success(
+        {
+          userId: result.userId,
+          roles: result.roles,
+        },
+        "Roles de usuario obtenidos exitosamente"
+      );
     } catch (error) {
       console.error(`Error en endpoint admin/users/{userId}/roles:`, error);
-      return NextResponse.json(
-        { error: "Error interno del servidor" },
-        { status: 500 }
+      return ResponseHelper.internalServerError(
+        "Error interno del servidor",
+        error as Error
       );
     }
   }
@@ -166,19 +182,23 @@ export class AdminController {
       const userId = this.extractUserIdFromPath(url.pathname);
 
       if (!userId || isNaN(userId)) {
-        return NextResponse.json(
-          { error: "ID de usuario inválido" },
-          { status: 400 }
-        );
+        return ResponseHelper.validationError("ID de usuario inválido", [
+          {
+            field: "userId",
+            message: "El ID de usuario debe ser un número válido",
+          },
+        ]);
       }
 
       const { roleId } = await request.json();
 
       if (!roleId || isNaN(roleId)) {
-        return NextResponse.json(
-          { error: "ID de rol inválido" },
-          { status: 400 }
-        );
+        return ResponseHelper.validationError("ID de rol inválido", [
+          {
+            field: "roleId",
+            message: "El ID de rol debe ser un número válido",
+          },
+        ]);
       }
 
       const result = await this.userService.assignRoleToUser(
@@ -188,21 +208,25 @@ export class AdminController {
       );
 
       if (!result.success) {
-        return NextResponse.json({ error: result.message }, { status: 400 });
+        return ResponseHelper.validationError(
+          result.message || "Error al asignar rol",
+          []
+        );
       }
 
-      return NextResponse.json({
-        success: true,
-        message: result.message,
-        userId,
-        roleId,
-        assignedBy,
-      });
+      return ResponseHelper.operationSuccess(
+        result.message || "Rol asignado exitosamente",
+        {
+          userId,
+          roleId,
+          assignedBy,
+        }
+      );
     } catch (error) {
       console.error(`Error asignando rol a usuario:`, error);
-      return NextResponse.json(
-        { error: "Error interno del servidor" },
-        { status: 500 }
+      return ResponseHelper.internalServerError(
+        "Error interno del servidor",
+        error as Error
       );
     }
   }
@@ -213,38 +237,46 @@ export class AdminController {
       const userId = this.extractUserIdFromPath(url.pathname);
 
       if (!userId || isNaN(userId)) {
-        return NextResponse.json(
-          { error: "ID de usuario inválido" },
-          { status: 400 }
-        );
+        return ResponseHelper.validationError("ID de usuario inválido", [
+          {
+            field: "userId",
+            message: "El ID de usuario debe ser un número válido",
+          },
+        ]);
       }
 
       const { roleId } = await request.json();
 
       if (!roleId || isNaN(roleId)) {
-        return NextResponse.json(
-          { error: "ID de rol inválido" },
-          { status: 400 }
-        );
+        return ResponseHelper.validationError("ID de rol inválido", [
+          {
+            field: "roleId",
+            message: "El ID de rol debe ser un número válido",
+          },
+        ]);
       }
 
       const result = await this.userService.removeRoleFromUser(userId, roleId);
 
       if (!result.success) {
-        return NextResponse.json({ error: result.message }, { status: 400 });
+        return ResponseHelper.validationError(
+          result.message || "Error al remover rol",
+          []
+        );
       }
 
-      return NextResponse.json({
-        success: true,
-        message: result.message,
-        userId,
-        roleId,
-      });
+      return ResponseHelper.operationSuccess(
+        result.message || "Rol removido exitosamente",
+        {
+          userId,
+          roleId,
+        }
+      );
     } catch (error) {
       console.error(`Error removiendo rol de usuario:`, error);
-      return NextResponse.json(
-        { error: "Error interno del servidor" },
-        { status: 500 }
+      return ResponseHelper.internalServerError(
+        "Error interno del servidor",
+        error as Error
       );
     }
   }

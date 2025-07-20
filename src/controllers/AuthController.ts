@@ -3,6 +3,7 @@ import { injectable, inject } from "inversify";
 import type { IAuthService } from "@/services/interfaces/IAuthService";
 import { TYPES } from "@/types";
 import { LoginRequestDTO, RegisterRequestDTO } from "@/models/dtos";
+import { ResponseHelper } from "@/utils/ResponseHelper";
 
 @injectable()
 export class AuthController {
@@ -14,32 +15,36 @@ export class AuthController {
 
       // Validar que se proporcionen rut y password
       if (!credentials.rut || !credentials.password) {
-        return NextResponse.json(
-          { error: "RUT y password son requeridos" },
-          { status: 400 }
-        );
+        return ResponseHelper.validationError("RUT y password son requeridos", [
+          ...(!credentials.rut
+            ? [{ field: "rut", message: "RUT es requerido" }]
+            : []),
+          ...(!credentials.password
+            ? [{ field: "password", message: "Password es requerido" }]
+            : []),
+        ]);
       }
 
       // Intentar login através del servicio
       const result = await this.authService.login(credentials);
 
       if (!result) {
-        return NextResponse.json(
-          { error: "Credenciales inválidas" },
-          { status: 401 }
-        );
+        return ResponseHelper.unauthorizedError("Credenciales inválidas");
       }
 
       // Devolver respuesta exitosa
-      return NextResponse.json({
-        token: result.token,
-        user: result.user,
-      });
+      return ResponseHelper.success(
+        {
+          token: result.token,
+          user: result.user,
+        },
+        "Login exitoso"
+      );
     } catch (error) {
       console.error("Error en endpoint login:", error);
-      return NextResponse.json(
-        { error: "Error interno del servidor" },
-        { status: 500 }
+      return ResponseHelper.internalServerError(
+        "Error interno del servidor",
+        error as Error
       );
     }
   }
@@ -49,27 +54,48 @@ export class AuthController {
       const userData: RegisterRequestDTO = await request.json();
 
       // Validar que se proporcionen los campos obligatorios
-      if (
-        !userData.rut ||
-        !userData.nombre ||
-        !userData.apellido_paterno ||
-        !userData.apellido_materno ||
-        !userData.password
-      ) {
-        return NextResponse.json(
-          {
-            error:
-              "RUT, nombre, apellido paterno, apellido materno y password son requeridos",
-          },
-          { status: 400 }
+      const validationErrors = [];
+      if (!userData.rut)
+        validationErrors.push({ field: "rut", message: "RUT es requerido" });
+      if (!userData.nombre)
+        validationErrors.push({
+          field: "nombre",
+          message: "Nombre es requerido",
+        });
+      if (!userData.apellido_paterno)
+        validationErrors.push({
+          field: "apellido_paterno",
+          message: "Apellido paterno es requerido",
+        });
+      if (!userData.apellido_materno)
+        validationErrors.push({
+          field: "apellido_materno",
+          message: "Apellido materno es requerido",
+        });
+      if (!userData.password)
+        validationErrors.push({
+          field: "password",
+          message: "Password es requerido",
+        });
+
+      if (validationErrors.length > 0) {
+        return ResponseHelper.validationError(
+          "Campos obligatorios faltantes",
+          validationErrors
         );
       }
 
       // Validar el RUT
       if (!this.authService.validateRutDigit(userData.rut)) {
-        return NextResponse.json(
-          { error: "El RUT proporcionado no es válido" },
-          { status: 400 }
+        return ResponseHelper.validationError(
+          "El RUT proporcionado no es válido",
+          [
+            {
+              field: "rut",
+              code: "INVALID_FORMAT",
+              message: "Formato de RUT inválido",
+            },
+          ]
         );
       }
 
@@ -78,25 +104,24 @@ export class AuthController {
 
       if (!result) {
         // El servicio retorna null si hay errores (usuario existe, email existe, etc.)
-        return NextResponse.json(
-          {
-            error:
-              "No se pudo crear el usuario. Verifique que el RUT y email no estén en uso.",
-          },
-          { status: 409 }
+        return ResponseHelper.conflictError(
+          "No se pudo crear el usuario. Verifique que el RUT y email no estén en uso."
         );
       }
 
       // Devolver respuesta exitosa
-      return NextResponse.json({
-        token: result.token,
-        user: result.user,
-      });
+      return ResponseHelper.created(
+        {
+          token: result.token,
+          user: result.user,
+        },
+        "Usuario registrado exitosamente"
+      );
     } catch (error) {
       console.error("Error en endpoint register:", error);
-      return NextResponse.json(
-        { error: "Error interno del servidor" },
-        { status: 500 }
+      return ResponseHelper.internalServerError(
+        "Error interno del servidor",
+        error as Error
       );
     }
   }
