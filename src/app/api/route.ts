@@ -6,7 +6,6 @@ async function handler(request: NextRequest) {
     message: "Gatekeeper API - Hello world!",
     version: "1.0.0",
     status: "active",
-    cors: "enabled",
   });
 }
 
