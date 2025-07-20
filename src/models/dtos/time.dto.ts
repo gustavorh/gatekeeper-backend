@@ -5,13 +5,11 @@ export interface ClockActionRequestDTO {
   timestamp?: string;
 }
 
+// Simplified response DTO - no more validation handling
 export interface ClockActionResponseDTO {
-  success: boolean;
-  message: string;
-  session?: WorkSession;
-  entry?: TimeEntry;
-  buttonStates?: ButtonStatesDTO;
-  validationErrors?: string[];
+  session: WorkSession;
+  entry: TimeEntry;
+  buttonStates: ButtonStatesDTO;
 }
 
 // Button States DTO

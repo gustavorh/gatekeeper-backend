@@ -1,16 +1,57 @@
 import { NextRequest, NextResponse } from "next/server";
 import { injectable, inject } from "inversify";
 import type { ITimeTrackingService } from "@/services/interfaces/ITimeTrackingService";
+import type { IValidationUtils } from "@/utils/interfaces/IValidationUtils";
 import { TYPES } from "@/types";
 import { ClockActionRequestDTO } from "@/models/dtos";
 import { ResponseHelper } from "@/utils/ResponseHelper";
+import {
+  BusinessRuleError,
+  NotFoundError,
+  ValidationError,
+  ConflictError,
+} from "@/utils/exceptions";
 
 @injectable()
 export class TimeController {
   constructor(
     @inject(TYPES.TimeTrackingService)
-    private timeTrackingService: ITimeTrackingService
+    private timeTrackingService: ITimeTrackingService,
+    @inject(TYPES.ValidationUtils)
+    private validationUtils: IValidationUtils
   ) {}
+
+  /**
+   * Helper method to handle service exceptions consistently
+   */
+  private handleServiceError(error: Error): NextResponse {
+    if (error instanceof BusinessRuleError) {
+      return ResponseHelper.validationError(error.message, [
+        { message: error.message },
+      ]);
+    }
+
+    if (error instanceof NotFoundError) {
+      return ResponseHelper.notFoundError(error.message);
+    }
+
+    if (error instanceof ValidationError) {
+      return ResponseHelper.validationError(
+        error.message,
+        error.validationErrors
+      );
+    }
+
+    if (error instanceof ConflictError) {
+      return ResponseHelper.conflictError(error.message);
+    }
+
+    console.error("Error interno del servicio:", error);
+    return ResponseHelper.internalServerError(
+      "Error interno del servidor",
+      error
+    );
+  }
 
   async clockIn(request: NextRequest, userId: number): Promise<NextResponse> {
     try {
@@ -18,28 +59,36 @@ export class TimeController {
       const { timestamp }: ClockActionRequestDTO = body;
 
       // Convertir timestamp si se proporciona
-      const clockInTime = timestamp ? new Date(timestamp) : undefined;
+      const clockInTime = timestamp ? new Date(timestamp) : new Date();
 
-      // Ejecutar clock-in a través del servicio
+      // Realizar validaciones en el controlador
+      const validations = await this.validationUtils.validateTimeEntry(
+        userId,
+        "clock_in",
+        clockInTime
+      );
+
+      const errors = validations.filter((v) => !v.isValid);
+
+      if (errors.length > 0) {
+        const validationErrors = errors.map((error) => ({
+          message: error.error!,
+        }));
+
+        return ResponseHelper.validationError(
+          "No se pudo realizar el clock-in",
+          validationErrors
+        );
+      }
+
+      // Ejecutar clock-in a través del servicio (sin validaciones)
       const result = await this.timeTrackingService.clockIn(
         userId,
         clockInTime
       );
 
-      if (!result.success) {
-        const errors =
-          result.validationErrors?.map((error) => ({
-            message: String(error),
-          })) || [];
-
-        return ResponseHelper.validationError(
-          result.message || "Error en clock-in",
-          errors
-        );
-      }
-
       return ResponseHelper.operationSuccess(
-        result.message || "Clock-in realizado exitosamente",
+        "Clock-in realizado exitosamente",
         {
           session: result.session,
           entry: result.entry,
@@ -47,11 +96,7 @@ export class TimeController {
         }
       );
     } catch (error) {
-      console.error("Error en endpoint clock-in:", error);
-      return ResponseHelper.internalServerError(
-        "Error interno del servidor",
-        error as Error
-      );
+      return this.handleServiceError(error as Error);
     }
   }
 
@@ -60,26 +105,35 @@ export class TimeController {
       const body = await request.json();
       const { timestamp }: ClockActionRequestDTO = body;
 
-      const clockOutTime = timestamp ? new Date(timestamp) : undefined;
+      const clockOutTime = timestamp ? new Date(timestamp) : new Date();
+
+      // Realizar validaciones en el controlador
+      const validations = await this.validationUtils.validateTimeEntry(
+        userId,
+        "clock_out",
+        clockOutTime
+      );
+
+      const errors = validations.filter((v) => !v.isValid);
+
+      if (errors.length > 0) {
+        const validationErrors = errors.map((error) => ({
+          message: error.error!,
+        }));
+
+        return ResponseHelper.validationError(
+          "No se pudo realizar el clock-out",
+          validationErrors
+        );
+      }
+
       const result = await this.timeTrackingService.clockOut(
         userId,
         clockOutTime
       );
 
-      if (!result.success) {
-        const errors =
-          result.validationErrors?.map((error) => ({
-            message: String(error),
-          })) || [];
-
-        return ResponseHelper.validationError(
-          result.message || "Error en clock-out",
-          errors
-        );
-      }
-
       return ResponseHelper.operationSuccess(
-        result.message || "Clock-out realizado exitosamente",
+        "Clock-out realizado exitosamente",
         {
           session: result.session,
           entry: result.entry,
@@ -88,11 +142,7 @@ export class TimeController {
         }
       );
     } catch (error) {
-      console.error("Error en endpoint clock-out:", error);
-      return ResponseHelper.internalServerError(
-        "Error interno del servidor",
-        error as Error
-      );
+      return this.handleServiceError(error as Error);
     }
   }
 
@@ -104,38 +154,40 @@ export class TimeController {
       const body = await request.json();
       const { timestamp }: ClockActionRequestDTO = body;
 
-      const lunchTime = timestamp ? new Date(timestamp) : undefined;
+      const lunchTime = timestamp ? new Date(timestamp) : new Date();
+
+      // Realizar validaciones en el controlador
+      const validations = await this.validationUtils.validateTimeEntry(
+        userId,
+        "start_lunch",
+        lunchTime
+      );
+
+      const errors = validations.filter((v) => !v.isValid);
+
+      if (errors.length > 0) {
+        const validationErrors = errors.map((error) => ({
+          message: error.error!,
+        }));
+
+        return ResponseHelper.validationError(
+          "No se pudo iniciar el almuerzo",
+          validationErrors
+        );
+      }
+
       const result = await this.timeTrackingService.startLunch(
         userId,
         lunchTime
       );
 
-      if (!result.success) {
-        const errors =
-          result.validationErrors?.map((error) => ({
-            message: String(error),
-          })) || [];
-
-        return ResponseHelper.validationError(
-          result.message || "Error al iniciar almuerzo",
-          errors
-        );
-      }
-
-      return ResponseHelper.operationSuccess(
-        result.message || "Almuerzo iniciado exitosamente",
-        {
-          session: result.session,
-          entry: result.entry,
-          buttonStates: result.buttonStates,
-        }
-      );
+      return ResponseHelper.operationSuccess("Almuerzo iniciado exitosamente", {
+        session: result.session,
+        entry: result.entry,
+        buttonStates: result.buttonStates,
+      });
     } catch (error) {
-      console.error("Error en endpoint start-lunch:", error);
-      return ResponseHelper.internalServerError(
-        "Error interno del servidor",
-        error as Error
-      );
+      return this.handleServiceError(error as Error);
     }
   }
 
@@ -147,42 +199,41 @@ export class TimeController {
       const body = await request.json();
       const { timestamp }: ClockActionRequestDTO = body;
 
-      // Convertir timestamp si se proporciona
-      const resumeTime = timestamp ? new Date(timestamp) : undefined;
+      const resumeTime = timestamp ? new Date(timestamp) : new Date();
 
-      // Ejecutar resume-shift a través del servicio
+      // Realizar validaciones en el controlador
+      const validations = await this.validationUtils.validateTimeEntry(
+        userId,
+        "resume_shift",
+        resumeTime
+      );
+
+      const errors = validations.filter((v) => !v.isValid);
+
+      if (errors.length > 0) {
+        const validationErrors = errors.map((error) => ({
+          message: error.error!,
+        }));
+
+        return ResponseHelper.validationError(
+          "No se pudo reanudar el turno",
+          validationErrors
+        );
+      }
+
       const result = await this.timeTrackingService.resumeShift(
         userId,
         resumeTime
       );
 
-      if (!result.success) {
-        const errors =
-          result.validationErrors?.map((error) => ({
-            message: String(error),
-          })) || [];
-
-        return ResponseHelper.validationError(
-          result.message || "Error al reanudar turno",
-          errors
-        );
-      }
-
-      return ResponseHelper.operationSuccess(
-        result.message || "Turno reanudado exitosamente",
-        {
-          session: result.session,
-          entry: result.entry,
-          buttonStates: result.buttonStates,
-          lunchDuration: result.session?.totalLunchMinutes || 0,
-        }
-      );
+      return ResponseHelper.operationSuccess("Turno reanudado exitosamente", {
+        session: result.session,
+        entry: result.entry,
+        buttonStates: result.buttonStates,
+        lunchDuration: result.session?.totalLunchMinutes || 0,
+      });
     } catch (error) {
-      console.error("Error en endpoint resume-shift:", error);
-      return ResponseHelper.internalServerError(
-        "Error interno del servidor",
-        error as Error
-      );
+      return this.handleServiceError(error as Error);
     }
   }
 
