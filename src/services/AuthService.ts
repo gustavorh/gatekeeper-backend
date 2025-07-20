@@ -14,6 +14,20 @@ import {
 } from "@/models/dtos";
 import { CreateUserData } from "@/models/entities";
 
+// Extender SafeUser para incluir roles
+interface SafeUserWithRoles {
+  id: number;
+  rut: string;
+  nombre: string;
+  apellido_paterno: string;
+  apellido_materno: string;
+  email?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  roles?: string[];
+  permissions?: string[];
+}
+
 @injectable()
 export class AuthService implements IAuthService {
   private readonly JWT_SECRET =
@@ -50,6 +64,16 @@ export class AuthService implements IAuthService {
         return null;
       }
 
+      // Obtener roles del usuario
+      const userRoleDetails = await this.roleRepo.getUserRoleDetails(user.id);
+      const roles = userRoleDetails.map((role) => role.roleName);
+      const permissions = userRoleDetails.reduce((acc, role) => {
+        const rolePermissions = Array.isArray(role.permissions)
+          ? role.permissions
+          : [];
+        return [...acc, ...rolePermissions];
+      }, [] as string[]);
+
       // Generar token con roles
       const token = await this.generateTokenWithRoles({
         userId: user.id,
@@ -60,12 +84,17 @@ export class AuthService implements IAuthService {
         email: user.email || undefined,
       });
 
-      // Devolver respuesta sin la contraseña
+      // Devolver respuesta sin la contraseña pero con roles
       const { password: _, ...safeUser } = user;
+      const userWithRoles: SafeUserWithRoles = {
+        ...safeUser,
+        roles,
+        permissions,
+      };
 
       return {
         token,
-        user: safeUser,
+        user: userWithRoles,
       };
     } catch (error) {
       console.error("Error en login:", error);
@@ -121,10 +150,17 @@ export class AuthService implements IAuthService {
       const newUser = await this.userRepo.createUser(createData);
 
       // Asignar rol por defecto (empleado)
+      let roles: string[] = [];
+      let permissions: string[] = [];
+
       try {
-        const empleadoRole = await this.roleRepo.findByName("empleado");
+        const empleadoRole = await this.roleRepo.findByName("employee");
         if (empleadoRole) {
           await this.roleRepo.assignRoleToUser(newUser.id, empleadoRole.id);
+          roles = [empleadoRole.name];
+          permissions = Array.isArray(empleadoRole.permissions)
+            ? empleadoRole.permissions
+            : [];
         }
       } catch (error) {
         console.warn("No se pudo asignar rol por defecto:", error);
@@ -140,12 +176,17 @@ export class AuthService implements IAuthService {
         email: newUser.email || undefined,
       });
 
-      // Devolver respuesta sin la contraseña
+      // Devolver respuesta sin la contraseña pero con roles
       const { password: _, ...safeUser } = newUser;
+      const userWithRoles: SafeUserWithRoles = {
+        ...safeUser,
+        roles,
+        permissions,
+      };
 
       return {
         token,
-        user: safeUser,
+        user: userWithRoles,
       };
     } catch (error) {
       console.error("Error en register:", error);

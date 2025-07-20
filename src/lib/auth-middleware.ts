@@ -91,14 +91,14 @@ export function protectApi(config: ApiProtectionConfig = {}) {
       try {
         // Manejo explícito de OPTIONS como respaldo
         if (request.method === "OPTIONS") {
-          console.log(
-            `🎯 [AUTH-MIDDLEWARE] Handling OPTIONS fallback for: ${request.url}`
-          );
+          //console.log(
+          //  `🎯 [AUTH-MIDDLEWARE] Handling OPTIONS fallback for: ${request.url}`
+          //);
           const response = new NextResponse(null, { status: 200 });
           const corsResponse = addCorsHeaders(response, request);
-          console.log(
-            `📤 [AUTH-MIDDLEWARE] OPTIONS response status: ${corsResponse.status}`
-          );
+          //console.log(
+          //  `📤 [AUTH-MIDDLEWARE] OPTIONS response status: ${corsResponse.status}`
+          //);
           return corsResponse;
         }
 
@@ -186,7 +186,7 @@ export function protectApi(config: ApiProtectionConfig = {}) {
         // Agregar headers CORS a la respuesta exitosa
         return addCorsHeaders(response, request);
       } catch (error) {
-        console.error("❌ Error en middleware de autenticación:", error);
+        //console.error("❌ Error en middleware de autenticación:", error);
         return addCorsHeaders(
           ResponseHelper.internalServerError(
             "Error de autenticación",
