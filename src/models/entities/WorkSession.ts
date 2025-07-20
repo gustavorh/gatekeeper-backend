@@ -1,4 +1,8 @@
-export type SessionStatus = "active" | "completed" | "on_lunch";
+export type SessionStatus =
+  | "active"
+  | "completed"
+  | "on_lunch"
+  | "overtime_pending";
 
 export interface WorkSession {
   id: number;
@@ -12,11 +16,18 @@ export interface WorkSession {
   totalWorkMinutes: number;
   totalLunchMinutes: number;
   totalWorkHours: string;
+  isOvertimeDay?: boolean;
+  overtimeMinutes?: number;
+  isValidSession: boolean;
+  validationErrors?: string[] | null;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export type CreateWorkSessionData = Omit<
   WorkSession,
-  "id" | "createdAt" | "updatedAt"
->;
+  "id" | "createdAt" | "updatedAt" | "isValidSession" | "validationErrors"
+> & {
+  isValidSession?: boolean;
+  validationErrors?: string[] | null;
+};

@@ -45,4 +45,11 @@ export interface ITimeTrackingService {
 
   // Button states
   getButtonStates(userId: number, currentTime?: Date): Promise<ButtonStatesDTO>;
+
+  // Admin functions
+  revalidateAllSessions(): Promise<{
+    processed: number;
+    invalidated: number;
+    errors: string[];
+  }>;
 }

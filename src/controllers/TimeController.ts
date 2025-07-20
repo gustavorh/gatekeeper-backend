@@ -424,6 +424,8 @@ export class TimeController {
         totalWorkHours: session.totalWorkHours,
         totalLunchMinutes: session.totalLunchMinutes,
         status: session.status,
+        isValidSession: session.isValidSession,
+        validationErrors: session.validationErrors,
       }));
 
       return ResponseHelper.successWithPagination(
@@ -442,6 +444,32 @@ export class TimeController {
       console.error("Error en endpoint sessions:", error);
       return ResponseHelper.internalServerError(
         "Error interno del servidor",
+        error as Error
+      );
+    }
+  }
+
+  /**
+   * Endpoint de administración para re-validar todas las sesiones
+   * POST /api/admin/time/revalidate-sessions
+   */
+  async revalidateAllSessions(request: NextRequest): Promise<NextResponse> {
+    try {
+      const result = await this.timeTrackingService.revalidateAllSessions();
+
+      return ResponseHelper.operationSuccess(
+        "Re-validación completada exitosamente",
+        {
+          summary: `Procesadas: ${result.processed}, Invalidadas: ${result.invalidated}`,
+          processed: result.processed,
+          invalidated: result.invalidated,
+          errors: result.errors,
+        }
+      );
+    } catch (error) {
+      console.error("Error en revalidateAllSessions:", error);
+      return ResponseHelper.internalServerError(
+        "Error al re-validar sesiones",
         error as Error
       );
     }

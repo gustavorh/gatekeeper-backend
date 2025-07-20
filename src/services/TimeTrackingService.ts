@@ -442,6 +442,52 @@ export class TimeTrackingService implements ITimeTrackingService {
     }
   }
 
+  /**
+   * Re-valida todas las sesiones existentes aplicando las reglas actuales
+   * Útil para aplicar nuevas validaciones a datos históricos
+   */
+  async revalidateAllSessions(): Promise<{
+    processed: number;
+    invalidated: number;
+    errors: string[];
+  }> {
+    try {
+      // Obtener todas las sesiones (máximo 1000 por seguridad)
+      const allSessions = await this.sessionRepo.findAll(1000, 0);
+      let processed = 0;
+      let invalidated = 0;
+      const errors: string[] = [];
+
+      for (const session of allSessions) {
+        try {
+          // Actualizar totales y validar
+          await this.updateSessionTotals(session.id);
+          processed++;
+
+          // Verificar si fue invalidada
+          const updatedSession = await this.sessionRepo.findById(session.id);
+          if (updatedSession && !updatedSession.isValidSession) {
+            invalidated++;
+          }
+        } catch (error) {
+          errors.push(
+            `Error procesando sesión ${session.id}: ${
+              error instanceof Error ? error.message : "Error desconocido"
+            }`
+          );
+        }
+      }
+
+      return { processed, invalidated, errors };
+    } catch (error) {
+      throw new BusinessRuleError(
+        `Error re-validando sesiones: ${
+          error instanceof Error ? error.message : "Error desconocido"
+        }`
+      );
+    }
+  }
+
   // Métodos auxiliares privados
   private async getOrCreateWorkSession(userId: number, date: Date) {
     let session = await this.sessionRepo.findByUserIdAndDate(userId, date);
@@ -454,6 +500,7 @@ export class TimeTrackingService implements ITimeTrackingService {
         totalWorkMinutes: 0,
         totalLunchMinutes: 0,
         totalWorkHours: "0.00",
+        isValidSession: true,
       };
       session = await this.sessionRepo.createSession(sessionData);
     }
@@ -502,11 +549,106 @@ export class TimeTrackingService implements ITimeTrackingService {
       totalWorkMinutes = Math.max(0, totalMinutes - totalLunchMinutes);
     }
 
-    // Actualizar totales
-    await this.sessionRepo.updateSessionTotals(sessionId, {
+    // Validar sesión y obtener errores si los hay
+    const validationResult = await this.validateSessionIntegrity(
+      session,
+      totalWorkMinutes,
+      totalLunchMinutes
+    );
+
+    // Actualizar totales y validación
+    await this.sessionRepo.update(sessionId, {
       totalWorkMinutes: Math.round(totalWorkMinutes),
       totalLunchMinutes: Math.round(totalLunchMinutes),
       totalWorkHours: (totalWorkMinutes / 60).toFixed(2),
+      isValidSession: validationResult.isValid,
+      validationErrors:
+        validationResult.errors.length > 0 ? validationResult.errors : null,
     });
+  }
+
+  /**
+   * Valida la integridad de una sesión según las reglas laborales chilenas
+   */
+  private async validateSessionIntegrity(
+    session: any,
+    totalWorkMinutes: number,
+    totalLunchMinutes: number
+  ): Promise<{ isValid: boolean; errors: string[] }> {
+    const errors: string[] = [];
+    const totalWorkHours = totalWorkMinutes / 60;
+
+    // 1. Validar jornada mínima (al menos 1 hora trabajada)
+    if (session.status === "completed" && totalWorkHours < 1) {
+      errors.push("Jornada muy corta: menos de 1 hora trabajada");
+    }
+
+    // 2. Validar jornada máxima (no más de 10 horas según ley chilena)
+    if (totalWorkHours > 10) {
+      errors.push(
+        `Jornada excesiva: ${totalWorkHours.toFixed(1)} horas (máximo 10h)`
+      );
+    }
+
+    // 3. Validar duración del almuerzo (entre 30 min y 2 horas)
+    if (totalLunchMinutes > 0) {
+      if (totalLunchMinutes < 30) {
+        errors.push(
+          `Almuerzo muy corto: ${totalLunchMinutes} minutos (mínimo 30 min)`
+        );
+      } else if (totalLunchMinutes > 120) {
+        errors.push(
+          `Almuerzo muy largo: ${totalLunchMinutes} minutos (máximo 120 min)`
+        );
+      }
+    }
+
+    // 4. Validar consistencia de horarios
+    if (session.clockInTime && session.clockOutTime) {
+      if (new Date(session.clockInTime) >= new Date(session.clockOutTime)) {
+        errors.push("Hora de entrada posterior a hora de salida");
+      }
+    }
+
+    // 5. Validar almuerzo si existe
+    if (session.lunchStartTime && session.lunchEndTime) {
+      if (new Date(session.lunchStartTime) >= new Date(session.lunchEndTime)) {
+        errors.push("Hora de inicio de almuerzo posterior a hora de fin");
+      }
+
+      // Validar que el almuerzo esté dentro del horario laboral
+      if (
+        session.clockInTime &&
+        new Date(session.lunchStartTime) < new Date(session.clockInTime)
+      ) {
+        errors.push("Almuerzo iniciado antes de la entrada");
+      }
+
+      if (
+        session.clockOutTime &&
+        new Date(session.lunchEndTime) > new Date(session.clockOutTime)
+      ) {
+        errors.push("Almuerzo terminado después de la salida");
+      }
+    }
+
+    // 6. Validar sesión incompleta (solo para sesiones "completed")
+    if (session.status === "completed") {
+      if (!session.clockInTime) {
+        errors.push("Sesión completada sin hora de entrada");
+      }
+      if (!session.clockOutTime) {
+        errors.push("Sesión completada sin hora de salida");
+      }
+      // Si hay almuerzo iniciado pero no terminado
+      if (session.lunchStartTime && !session.lunchEndTime) {
+        errors.push("Almuerzo iniciado pero no finalizado");
+      }
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+    };
   }
 }
