@@ -1,1 +1,0 @@
-ALTER TABLE `work_statistics` MODIFY COLUMN `compliance_score` decimal(5,2) DEFAULT '100.00';
