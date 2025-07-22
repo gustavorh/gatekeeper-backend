@@ -6,6 +6,7 @@ import {
   varchar,
   int,
 } from 'drizzle-orm/mysql-core';
+import { mysqlEnum } from 'drizzle-orm/mysql-core';
 
 export const users = mysqlTable('users', {
   id: varchar('id', { length: 36 }).primaryKey().notNull(),
@@ -59,4 +60,18 @@ export const rolePermissions = mysqlTable('role_permissions', {
     .notNull()
     .references(() => permissions.id),
   createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const shifts = mysqlTable('shifts', {
+  id: varchar('id', { length: 36 }).primaryKey().notNull(),
+  userId: varchar('user_id', { length: 36 })
+    .notNull()
+    .references(() => users.id),
+  clockInTime: timestamp('clock_in_time').notNull(),
+  clockOutTime: timestamp('clock_out_time'),
+  status: mysqlEnum('status', ['pending', 'active', 'completed'])
+    .notNull()
+    .default('pending'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });

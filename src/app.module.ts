@@ -5,6 +5,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './application/modules/auth.module';
 import { AdminModule } from './application/modules/admin.module';
+import { ShiftModule } from './application/modules/shift.module';
 import databaseConfig from './infrastructure/config/database.config';
 import { ResponseInterceptor } from './presentation/interceptors/response.interceptor';
 import { HttpExceptionFilter } from './presentation/filters/http-exception.filter';
@@ -17,6 +18,7 @@ import { HttpExceptionFilter } from './presentation/filters/http-exception.filte
     }),
     AuthModule,
     AdminModule,
+    ShiftModule,
   ],
   controllers: [AppController],
   providers: [

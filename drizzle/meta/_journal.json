@@ -15,6 +15,13 @@
       "when": 1753156190518,
       "tag": "0001_mute_shiver_man",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1753172684453,
+      "tag": "0002_soft_hairball",
+      "breakpoints": true
     }
   ]
 }
