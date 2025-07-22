@@ -29,8 +29,14 @@ export function IsRut(validationOptions?: ValidationOptions) {
             return false;
           }
 
+          // Always normalize before validation
+          const normalized = RutValidator.normalize(value);
+          if (!normalized) {
+            return false;
+          }
+
           // Validate RUT format and checksum
-          return RutValidator.isValid(value);
+          return RutValidator.isValid(normalized);
         },
         defaultMessage(args: ValidationArguments) {
           const value = args.value;

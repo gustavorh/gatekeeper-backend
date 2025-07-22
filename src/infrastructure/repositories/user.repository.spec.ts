@@ -14,7 +14,7 @@ describe('UserRepository', () => {
 
   const mockUser: User = {
     id: '123e4567-e89b-12d3-a456-426614174000',
-    rut: '123456789',
+    rut: '123456785',
     email: 'test@example.com',
     password: 'hashedPassword',
     firstName: 'John',
@@ -25,7 +25,7 @@ describe('UserRepository', () => {
   };
 
   const mockCreateUserDto: CreateUserDto = {
-    rut: '123456789',
+    rut: '123456785',
     email: 'test@example.com',
     password: 'hashedPassword',
     firstName: 'John',

@@ -3,9 +3,9 @@ import { RutValidator } from './rut-validator';
 describe('RutValidator', () => {
   describe('isValidFormat', () => {
     it('should validate correct RUT format without hyphen', () => {
-      expect(RutValidator.isValidFormat('123456789')).toBe(true);
-      expect(RutValidator.isValidFormat('12345678K')).toBe(true);
-      expect(RutValidator.isValidFormat('12345678k')).toBe(true);
+      expect(RutValidator.isValidFormat('123456785')).toBe(true);
+      expect(RutValidator.isValidFormat('12345670K')).toBe(true);
+      expect(RutValidator.isValidFormat('12345670k')).toBe(true);
     });
 
     it('should validate correct RUT format with hyphen', () => {
@@ -22,6 +22,7 @@ describe('RutValidator', () => {
       expect(RutValidator.isValidFormat('12345678-X')).toBe(false); // Invalid character
       expect(RutValidator.isValidFormat('')).toBe(false); // Empty
       expect(RutValidator.isValidFormat('abc12345-6')).toBe(false); // Letters in number part
+      expect(RutValidator.isValidFormat('012345678')).toBe(false); // Leading zero
     });
 
     it('should reject non-string inputs', () => {
@@ -95,6 +96,7 @@ describe('RutValidator', () => {
       expect(RutValidator.isValid('')).toBe(false); // Empty
       expect(RutValidator.isValid(null as any)).toBe(false);
       expect(RutValidator.isValid(undefined as any)).toBe(false);
+      expect(RutValidator.isValid('012345678')).toBe(false); // Leading zero
     });
   });
 
@@ -146,18 +148,13 @@ describe('RutValidator', () => {
   });
 
   describe('Edge cases', () => {
-    it('should handle RUT with leading zeros', () => {
-      expect(RutValidator.isValid('012345678')).toBe(true);
-      expect(RutValidator.normalize('012345678')).toBe('012345678');
-    });
-
     it('should handle RUT with spaces', () => {
-      expect(RutValidator.normalize(' 12345678-9 ')).toBe('123456789');
+      expect(RutValidator.normalize(' 12345678-5 ')).toBe('123456785');
     });
 
     it('should handle mixed case verification digits', () => {
-      expect(RutValidator.isValid('12345678k')).toBe(true);
-      expect(RutValidator.isValid('12345678-K')).toBe(true);
+      expect(RutValidator.isValid('12345670k')).toBe(true);
+      expect(RutValidator.isValid('12345670-K')).toBe(true);
     });
   });
 });

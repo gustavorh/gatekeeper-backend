@@ -33,7 +33,7 @@ describe('AuthService', () => {
 
   const mockUser: User = {
     id: '123e4567-e89b-12d3-a456-426614174000',
-    rut: '123456789',
+    rut: '123456785',
     email: 'test@example.com',
     password: 'hashedPassword',
     firstName: 'John',
@@ -113,7 +113,7 @@ describe('AuthService', () => {
   describe('login', () => {
     it('should successfully login a user with valid credentials', async () => {
       const loginDto = {
-        rut: '123456789',
+        rut: '123456785',
         password: 'password123',
       };
 
@@ -126,7 +126,7 @@ describe('AuthService', () => {
 
       const result = await service.login(loginDto);
 
-      expect(mockUserRepository.findByRut).toHaveBeenCalledWith('123456789');
+      expect(mockUserRepository.findByRut).toHaveBeenCalledWith('123456785');
       expect(bcrypt.compare).toHaveBeenCalledWith(
         'password123',
         'hashedPassword',
@@ -148,7 +148,7 @@ describe('AuthService', () => {
 
     it('should throw UnauthorizedException when user does not exist', async () => {
       const loginDto = {
-        rut: '123456789',
+        rut: '123456785',
         password: 'password123',
       };
 
@@ -157,12 +157,12 @@ describe('AuthService', () => {
       await expect(service.login(loginDto)).rejects.toThrow(
         UnauthorizedException,
       );
-      expect(mockUserRepository.findByRut).toHaveBeenCalledWith('123456789');
+      expect(mockUserRepository.findByRut).toHaveBeenCalledWith('123456785');
     });
 
     it('should throw UnauthorizedException when user is inactive', async () => {
       const loginDto = {
-        rut: '123456789',
+        rut: '123456785',
         password: 'password123',
       };
 
@@ -176,7 +176,7 @@ describe('AuthService', () => {
 
     it('should throw UnauthorizedException when password is invalid', async () => {
       const loginDto = {
-        rut: '123456789',
+        rut: '123456785',
         password: 'wrongpassword',
       };
 
@@ -194,7 +194,7 @@ describe('AuthService', () => {
 
     it('should throw UnauthorizedException when user profile is not found', async () => {
       const loginDto = {
-        rut: '123456789',
+        rut: '123456785',
         password: 'password123',
       };
 
@@ -212,7 +212,7 @@ describe('AuthService', () => {
   describe('register', () => {
     it('should successfully register a new user', async () => {
       const registerDto = {
-        rut: '123456789',
+        rut: '123456785',
         email: 'newuser@example.com',
         password: 'password123',
         firstName: 'Jane',
@@ -234,7 +234,7 @@ describe('AuthService', () => {
 
       const result = await service.register(registerDto);
 
-      expect(mockUserRepository.findByRut).toHaveBeenCalledWith('123456789');
+      expect(mockUserRepository.findByRut).toHaveBeenCalledWith('123456785');
       expect(mockUserRepository.findByEmail).toHaveBeenCalledWith(
         'newuser@example.com',
       );
@@ -262,7 +262,7 @@ describe('AuthService', () => {
 
     it('should throw ConflictException when user with RUT already exists', async () => {
       const registerDto = {
-        rut: '123456789',
+        rut: '123456785',
         email: 'newuser@example.com',
         password: 'password123',
         firstName: 'Jane',
@@ -274,12 +274,12 @@ describe('AuthService', () => {
       await expect(service.register(registerDto)).rejects.toThrow(
         ConflictException,
       );
-      expect(mockUserRepository.findByRut).toHaveBeenCalledWith('123456789');
+      expect(mockUserRepository.findByRut).toHaveBeenCalledWith('123456785');
     });
 
     it('should throw ConflictException when user with email already exists', async () => {
       const registerDto = {
-        rut: '123456789',
+        rut: '123456785',
         email: 'existing@example.com',
         password: 'password123',
         firstName: 'Jane',

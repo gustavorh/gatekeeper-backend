@@ -6,7 +6,7 @@ describe('Auth DTOs', () => {
   describe('LoginDto', () => {
     it('should validate correct login data', async () => {
       const loginData = {
-        rut: '123456789',
+        rut: '123456785',
         password: 'password123',
       };
 
@@ -18,7 +18,7 @@ describe('Auth DTOs', () => {
 
     it('should validate RUT with hyphen', async () => {
       const loginData = {
-        rut: '12345678-9',
+        rut: '12345678-5',
         password: 'password123',
       };
 
@@ -43,7 +43,7 @@ describe('Auth DTOs', () => {
 
     it('should reject empty password', async () => {
       const loginData = {
-        rut: '123456789',
+        rut: '123456785',
         password: '',
       };
 
@@ -56,7 +56,7 @@ describe('Auth DTOs', () => {
 
     it('should reject password shorter than 6 characters', async () => {
       const loginData = {
-        rut: '123456789',
+        rut: '123456785',
         password: '12345',
       };
 
@@ -69,7 +69,7 @@ describe('Auth DTOs', () => {
 
     it('should reject non-string password', async () => {
       const loginData = {
-        rut: '123456789',
+        rut: '123456785',
         password: 123456 as any,
       };
 
@@ -97,7 +97,7 @@ describe('Auth DTOs', () => {
   describe('RegisterDto', () => {
     it('should validate correct registration data', async () => {
       const registerData = {
-        rut: '123456789',
+        rut: '123456785',
         email: 'test@example.com',
         password: 'password123',
         firstName: 'John',
@@ -112,7 +112,7 @@ describe('Auth DTOs', () => {
 
     it('should validate RUT with hyphen', async () => {
       const registerData = {
-        rut: '12345678-9',
+        rut: '12345678-5',
         email: 'test@example.com',
         password: 'password123',
         firstName: 'John',
@@ -127,7 +127,7 @@ describe('Auth DTOs', () => {
 
     it('should reject invalid email format', async () => {
       const registerData = {
-        rut: '123456789',
+        rut: '123456785',
         email: 'invalid-email',
         password: 'password123',
         firstName: 'John',
@@ -143,7 +143,7 @@ describe('Auth DTOs', () => {
 
     it('should reject empty email', async () => {
       const registerData = {
-        rut: '123456789',
+        rut: '123456785',
         email: '',
         password: 'password123',
         firstName: 'John',
@@ -159,7 +159,7 @@ describe('Auth DTOs', () => {
 
     it('should reject password shorter than 6 characters', async () => {
       const registerData = {
-        rut: '123456789',
+        rut: '123456785',
         email: 'test@example.com',
         password: '12345',
         firstName: 'John',
@@ -175,7 +175,7 @@ describe('Auth DTOs', () => {
 
     it('should reject empty firstName', async () => {
       const registerData = {
-        rut: '123456789',
+        rut: '123456785',
         email: 'test@example.com',
         password: 'password123',
         firstName: '',
@@ -191,7 +191,7 @@ describe('Auth DTOs', () => {
 
     it('should reject empty lastName', async () => {
       const registerData = {
-        rut: '123456789',
+        rut: '123456785',
         email: 'test@example.com',
         password: 'password123',
         firstName: 'John',
@@ -207,7 +207,7 @@ describe('Auth DTOs', () => {
 
     it('should reject non-string firstName', async () => {
       const registerData = {
-        rut: '123456789',
+        rut: '123456785',
         email: 'test@example.com',
         password: 'password123',
         firstName: 123 as any,
@@ -223,7 +223,7 @@ describe('Auth DTOs', () => {
 
     it('should reject non-string lastName', async () => {
       const registerData = {
-        rut: '123456789',
+        rut: '123456785',
         email: 'test@example.com',
         password: 'password123',
         firstName: 'John',
@@ -257,7 +257,7 @@ describe('Auth DTOs', () => {
   describe('Transformations', () => {
     it('should transform email to lowercase', () => {
       const registerData = {
-        rut: '123456789',
+        rut: '123456785',
         email: 'TEST@EXAMPLE.COM',
         password: 'password123',
         firstName: 'John',
@@ -270,7 +270,7 @@ describe('Auth DTOs', () => {
 
     it('should trim firstName', () => {
       const registerData = {
-        rut: '123456789',
+        rut: '123456785',
         email: 'test@example.com',
         password: 'password123',
         firstName: '  John  ',
@@ -283,7 +283,7 @@ describe('Auth DTOs', () => {
 
     it('should trim lastName', () => {
       const registerData = {
-        rut: '123456789',
+        rut: '123456785',
         email: 'test@example.com',
         password: 'password123',
         firstName: 'John',
@@ -296,7 +296,7 @@ describe('Auth DTOs', () => {
 
     it('should normalize RUT', () => {
       const registerData = {
-        rut: '12345678-9',
+        rut: '12345678-5',
         email: 'test@example.com',
         password: 'password123',
         firstName: 'John',
@@ -304,7 +304,7 @@ describe('Auth DTOs', () => {
       };
 
       const registerDto = plainToClass(RegisterDto, registerData);
-      expect(registerDto.rut).toBe('123456789');
+      expect(registerDto.rut).toBe('123456785');
     });
   });
 });

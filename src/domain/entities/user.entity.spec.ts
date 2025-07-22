@@ -5,7 +5,7 @@ describe('User Entity', () => {
     it('should have all required properties', () => {
       const user: User = {
         id: '123e4567-e89b-12d3-a456-426614174000',
-        rut: '123456789',
+        rut: '123456785',
         email: 'test@example.com',
         password: 'hashedPassword',
         firstName: 'John',
@@ -41,14 +41,14 @@ describe('User Entity', () => {
 
     it('should require all properties in CreateUserDto', () => {
       const createDto: CreateUserDto = {
-        rut: '123456789',
+        rut: '123456785',
         email: 'test@example.com',
         password: 'password123',
         firstName: 'John',
         lastName: 'Doe',
       };
 
-      expect(createDto.rut).toBe('123456789');
+      expect(createDto.rut).toBe('123456785');
       expect(createDto.email).toBe('test@example.com');
       expect(createDto.password).toBe('password123');
       expect(createDto.firstName).toBe('John');
@@ -60,7 +60,7 @@ describe('User Entity', () => {
     it('should enforce string types for required fields', () => {
       const user: User = {
         id: '123e4567-e89b-12d3-a456-426614174000',
-        rut: '123456789',
+        rut: '123456785',
         email: 'test@example.com',
         password: 'hashedPassword',
         firstName: 'John',

@@ -17,7 +17,7 @@ describe('AuthController', () => {
 
   const mockUser = {
     id: '123e4567-e89b-12d3-a456-426614174000',
-    rut: '123456789',
+    rut: '123456785',
     email: 'test@example.com',
     firstName: 'John',
     lastName: 'Doe',
@@ -74,7 +74,7 @@ describe('AuthController', () => {
   describe('login', () => {
     it('should successfully login a user', async () => {
       const loginDto: LoginDto = {
-        rut: '123456789',
+        rut: '123456785',
         password: 'password123',
       };
 
@@ -88,7 +88,7 @@ describe('AuthController', () => {
 
     it('should throw BadRequestException when login fails', async () => {
       const loginDto: LoginDto = {
-        rut: '123456789',
+        rut: '123456785',
         password: 'wrongpassword',
       };
 
@@ -104,7 +104,7 @@ describe('AuthController', () => {
 
     it('should handle service exceptions and wrap them in BadRequestException', async () => {
       const loginDto: LoginDto = {
-        rut: '123456789',
+        rut: '123456785',
         password: 'password123',
       };
 
@@ -122,7 +122,7 @@ describe('AuthController', () => {
   describe('register', () => {
     it('should successfully register a new user', async () => {
       const registerDto: RegisterDto = {
-        rut: '123456789',
+        rut: '123456785',
         email: 'newuser@example.com',
         password: 'password123',
         firstName: 'Jane',
@@ -139,7 +139,7 @@ describe('AuthController', () => {
 
     it('should throw BadRequestException when registration fails', async () => {
       const registerDto: RegisterDto = {
-        rut: '123456789',
+        rut: '123456785',
         email: 'existing@example.com',
         password: 'password123',
         firstName: 'Jane',
@@ -158,7 +158,7 @@ describe('AuthController', () => {
 
     it('should handle service exceptions and wrap them in BadRequestException', async () => {
       const registerDto: RegisterDto = {
-        rut: '123456789',
+        rut: '123456785',
         email: 'newuser@example.com',
         password: 'password123',
         firstName: 'Jane',
@@ -179,24 +179,24 @@ describe('AuthController', () => {
   describe('DTO validation', () => {
     it('should accept valid login DTO', () => {
       const validLoginDto: LoginDto = {
-        rut: '123456789',
+        rut: '123456785',
         password: 'password123',
       };
 
-      expect(validLoginDto.rut).toBe('123456789');
+      expect(validLoginDto.rut).toBe('123456785');
       expect(validLoginDto.password).toBe('password123');
     });
 
     it('should accept valid register DTO', () => {
       const validRegisterDto: RegisterDto = {
-        rut: '123456789',
+        rut: '123456785',
         email: 'test@example.com',
         password: 'password123',
         firstName: 'John',
         lastName: 'Doe',
       };
 
-      expect(validRegisterDto.rut).toBe('123456789');
+      expect(validRegisterDto.rut).toBe('123456785');
       expect(validRegisterDto.email).toBe('test@example.com');
       expect(validRegisterDto.password).toBe('password123');
       expect(validRegisterDto.firstName).toBe('John');
@@ -207,7 +207,7 @@ describe('AuthController', () => {
   describe('Error handling', () => {
     it('should handle UnauthorizedException from service', async () => {
       const loginDto: LoginDto = {
-        rut: '123456789',
+        rut: '123456785',
         password: 'wrongpassword',
       };
 
@@ -221,7 +221,7 @@ describe('AuthController', () => {
 
     it('should handle ConflictException from service', async () => {
       const registerDto: RegisterDto = {
-        rut: '123456789',
+        rut: '123456785',
         email: 'existing@example.com',
         password: 'password123',
         firstName: 'Jane',

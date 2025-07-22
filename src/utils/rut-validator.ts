@@ -19,6 +19,9 @@ export class RutValidator {
     // 8 digits with dots + hyphen + verification digit (0-9 or K)
     const dotsRegex = /^\d{1,3}(\.\d{3}){2}-[0-9kK]$/;
 
+    // Check if RUT starts with 0 (leading zeros not allowed)
+    if (rut.startsWith('0')) return false;
+
     return plainRegex.test(rut) || hyphenRegex.test(rut) || dotsRegex.test(rut);
   }
 
@@ -143,10 +146,14 @@ export class RutValidator {
   /**
    * Generates a complete RUT from a number
    * @param number RUT number (8 digits)
-   * @returns Complete RUT with verification digit
+   * @returns Complete RUT with verification digit or null if invalid
    */
-  static generateRut(number: string): string {
-    const dv = this.calculateDv(number);
-    return `${number}-${dv}`;
+  static generateRut(number: string): string | null {
+    try {
+      const dv = this.calculateDv(number);
+      return `${number}-${dv}`;
+    } catch {
+      return null;
+    }
   }
 }
