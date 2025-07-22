@@ -4,6 +4,7 @@ import { APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './application/modules/auth.module';
+import { AdminModule } from './application/modules/admin.module';
 import databaseConfig from './infrastructure/config/database.config';
 import { ResponseInterceptor } from './presentation/interceptors/response.interceptor';
 import { HttpExceptionFilter } from './presentation/filters/http-exception.filter';
@@ -15,6 +16,7 @@ import { HttpExceptionFilter } from './presentation/filters/http-exception.filte
       load: [databaseConfig],
     }),
     AuthModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [

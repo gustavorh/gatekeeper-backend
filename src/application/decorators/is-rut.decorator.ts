@@ -11,7 +11,7 @@ import { RutValidator } from '../../utils/rut-validator';
  * Also validates the verification digit
  */
 export function IsRut(validationOptions?: ValidationOptions) {
-  return function (object: Object, propertyName: string) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       name: 'isRut',
       target: object.constructor,
