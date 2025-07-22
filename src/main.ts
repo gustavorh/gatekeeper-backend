@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { LoggingInterceptor } from './presentation/interceptors/logging.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -17,6 +18,9 @@ async function bootstrap() {
       disableErrorMessages: false, // Include detailed error messages
     }),
   );
+
+  // Global logging interceptor
+  app.useGlobalInterceptors(new LoggingInterceptor());
 
   // Enable CORS for frontend integration
   app.enableCors({
@@ -59,10 +63,7 @@ async function bootstrap() {
 
   console.log(`🚀 Application is running on: http://localhost:${port}`);
   console.log(
-    `📝 API Documentation available at: http://localhost:${port}/api`,
-  );
-  console.log(
-    `Swagger documentation is available at: http://localhost:${port}/api/docs`,
+    `📝 API Documentation available at: http://localhost:${port}/api/docs`,
   );
 }
 
