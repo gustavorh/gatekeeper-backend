@@ -8,17 +8,17 @@ import { RutValidator } from '../../utils/rut-validator';
  * Enforces validation at the presentation layer
  */
 export class LoginDto {
-  @IsRut({
-    message:
-      'RUT must have a valid format (e.g., 123456789 or 12345678-9) and correct verification digit',
-  })
-  @IsNotEmpty({ message: 'RUT is required' })
   @Transform(({ value }) => {
     if (typeof value === 'string') {
       return RutValidator.normalize(value);
     }
     return value;
   })
+  @IsRut({
+    message:
+      'RUT must have a valid format (e.g., 123456789 or 12345678-9) and correct verification digit',
+  })
+  @IsNotEmpty({ message: 'RUT is required' })
   rut: string;
 
   @IsString({ message: 'Password must be a string' })
@@ -32,17 +32,17 @@ export class LoginDto {
  * Enforces validation at the presentation layer
  */
 export class RegisterDto {
-  @IsRut({
-    message:
-      'RUT must have a valid format (e.g., 123456789 or 12345678-9) and correct verification digit',
-  })
-  @IsNotEmpty({ message: 'RUT is required' })
   @Transform(({ value }) => {
     if (typeof value === 'string') {
       return RutValidator.normalize(value);
     }
     return value;
   })
+  @IsRut({
+    message:
+      'RUT must have a valid format (e.g., 123456789 or 12345678-9) and correct verification digit',
+  })
+  @IsNotEmpty({ message: 'RUT is required' })
   rut: string;
 
   @IsEmail({}, { message: 'Email must have a valid format' })

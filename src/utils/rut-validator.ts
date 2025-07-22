@@ -5,7 +5,7 @@
 export class RutValidator {
   /**
    * Validates the format of a Chilean RUT
-   * Accepts: "123456789" (9 chars, no hyphen) or "12345678-9" (with hyphen)
+   * Accepts: "123456789" (9 chars, no hyphen), "12345678-9" (with hyphen), or "12.345.678-9" (with dots)
    * @param rut RUT to validate
    * @returns true if format is valid
    */
@@ -16,8 +16,10 @@ export class RutValidator {
     const plainRegex = /^\d{8}[0-9kK]$/;
     // 8 digits + hyphen + verification digit (0-9 or K)
     const hyphenRegex = /^\d{8}-[0-9kK]$/;
+    // 8 digits with dots + hyphen + verification digit (0-9 or K)
+    const dotsRegex = /^\d{1,3}(\.\d{3}){2}-[0-9kK]$/;
 
-    return plainRegex.test(rut) || hyphenRegex.test(rut);
+    return plainRegex.test(rut) || hyphenRegex.test(rut) || dotsRegex.test(rut);
   }
 
   /**
