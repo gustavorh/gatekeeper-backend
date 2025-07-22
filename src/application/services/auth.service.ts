@@ -10,7 +10,6 @@ import {
   IAuthService,
   LoginDto,
   RegisterDto,
-  AuthResult,
 } from '../../domain/services/auth.service.interface';
 import { IUserRepository } from '../../domain/repositories/user.repository.interface';
 import { IRoleRepository } from '../../domain/repositories/role.repository.interface';

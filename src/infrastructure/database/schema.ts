@@ -9,7 +9,7 @@ import {
 
 export const users = mysqlTable('users', {
   id: varchar('id', { length: 36 }).primaryKey().notNull(),
-  rut: varchar('rut', { length: 12 }).notNull().unique(),
+  rut: varchar('rut', { length: 9 }).notNull().unique(),
   email: varchar('email', { length: 255 }).notNull().unique(),
   password: varchar('password', { length: 255 }).notNull(),
   firstName: varchar('first_name', { length: 100 }).notNull(),
