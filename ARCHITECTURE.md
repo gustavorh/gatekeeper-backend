@@ -145,8 +145,7 @@ npm run db:studio
 
 ## Próximos Pasos
 
-1. Implementar roles y permisos
-2. Agregar validación de entrada más robusta
-3. Implementar logging
-4. Agregar tests unitarios e integración
-5. Configurar CI/CD
+1. Agregar validación de entrada más robusta
+2. Agregar tests unitarios e integración
+3. Implementar paginación y filtrado en las consultas
+4. Mejorar la documentación de la API con Swagger
