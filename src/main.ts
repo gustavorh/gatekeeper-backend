@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -23,12 +24,45 @@ async function bootstrap() {
     credentials: true,
   });
 
+  // Swagger configuration
+  const config = new DocumentBuilder()
+    .setTitle('Gatekeeper API')
+    .setDescription(
+      'RESTful API for the Gatekeeper application. This API provides authentication, user management, and role-based access control functionality.',
+    )
+    .setVersion('1.0')
+    .addTag('auth', 'Authentication endpoints for user login and registration')
+    .addTag('users', 'User management endpoints for profile and user data')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Enter JWT token',
+        in: 'header',
+      },
+      'JWT-auth', // This name here is important for references
+    )
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
+    customSiteTitle: 'Gatekeeper API Documentation',
+  });
+
   const port = process.env.PORT || 3000;
   await app.listen(port);
 
   console.log(`🚀 Application is running on: http://localhost:${port}`);
   console.log(
     `📝 API Documentation available at: http://localhost:${port}/api`,
+  );
+  console.log(
+    `Swagger documentation is available at: http://localhost:${port}/api/docs`,
   );
 }
 
