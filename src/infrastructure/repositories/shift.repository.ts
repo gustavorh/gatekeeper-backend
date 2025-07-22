@@ -154,6 +154,30 @@ export class ShiftRepository implements IShiftRepository {
     return results as ShiftWithUser[];
   }
 
+  async findHistoryByUserIdWithoutUser(
+    userId: string,
+    limit: number = 10,
+    offset: number = 0,
+  ): Promise<Shift[]> {
+    const results = await this.db
+      .select({
+        id: shifts.id,
+        userId: shifts.userId,
+        clockInTime: shifts.clockInTime,
+        clockOutTime: shifts.clockOutTime,
+        status: shifts.status,
+        createdAt: shifts.createdAt,
+        updatedAt: shifts.updatedAt,
+      })
+      .from(shifts)
+      .where(eq(shifts.userId, userId))
+      .orderBy(desc(shifts.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    return results as Shift[];
+  }
+
   async countByUserId(userId: string): Promise<number> {
     const [result] = await this.db
       .select({ count: sql<number>`count(*)` })

@@ -9,7 +9,7 @@ export interface IShiftService {
     limit?: number,
     offset?: number,
   ): Promise<{
-    shifts: ShiftWithUser[];
+    shifts: Shift[];
     total: number;
   }>;
   validateClockIn(userId: string): Promise<boolean>;

@@ -19,5 +19,10 @@ export interface IShiftRepository {
     limit?: number,
     offset?: number,
   ): Promise<ShiftWithUser[]>;
+  findHistoryByUserIdWithoutUser(
+    userId: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<Shift[]>;
   countByUserId(userId: string): Promise<number>;
 }

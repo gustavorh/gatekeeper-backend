@@ -117,9 +117,9 @@ export class ShiftWithUserResponseDto extends ShiftResponseDto {
 export class ShiftHistoryResponseDto {
   @ApiProperty({
     description: 'List of shifts',
-    type: [ShiftWithUserResponseDto],
+    type: [ShiftResponseDto],
   })
-  shifts: ShiftWithUserResponseDto[];
+  shifts: ShiftResponseDto[];
 
   @ApiProperty({
     description: 'Total number of shifts',

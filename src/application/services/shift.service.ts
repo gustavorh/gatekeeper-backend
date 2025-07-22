@@ -99,15 +99,15 @@ export class ShiftService implements IShiftService {
     userId: string,
     limit: number = 10,
     offset: number = 0,
-  ): Promise<{ shifts: ShiftWithUser[]; total: number }> {
+  ): Promise<{ shifts: Shift[]; total: number }> {
     // Validate that user exists
     const user = await this.userRepository.findById(userId);
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    // Get shift history with user information
-    const shifts = await this.shiftRepository.findHistoryByUserId(
+    // Get shift history without user information
+    const shifts = await this.shiftRepository.findHistoryByUserIdWithoutUser(
       userId,
       limit,
       offset,
