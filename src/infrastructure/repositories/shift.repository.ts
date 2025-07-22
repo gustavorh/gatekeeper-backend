@@ -1,7 +1,10 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { shifts, users } from '../database/schema';
-import { eq, and, desc, asc, sql } from 'drizzle-orm';
-import { IShiftRepository } from '../../domain/repositories/shift.repository.interface';
+import { eq, and, desc, asc, sql, gte, lte } from 'drizzle-orm';
+import {
+  IShiftRepository,
+  ShiftFilters,
+} from '../../domain/repositories/shift.repository.interface';
 import {
   Shift,
   CreateShiftDto,
@@ -178,11 +181,84 @@ export class ShiftRepository implements IShiftRepository {
     return results as Shift[];
   }
 
+  async findHistoryByUserIdWithFilters(
+    userId: string,
+    filters: ShiftFilters,
+    limit: number = 10,
+    offset: number = 0,
+  ): Promise<Shift[]> {
+    const conditions = [eq(shifts.userId, userId)];
+
+    // Add date range filters
+    if (filters.startDate) {
+      conditions.push(gte(shifts.createdAt, new Date(filters.startDate)));
+    }
+    if (filters.endDate) {
+      // Add one day to include the end date
+      const endDate = new Date(filters.endDate);
+      endDate.setDate(endDate.getDate() + 1);
+      conditions.push(lte(shifts.createdAt, endDate));
+    }
+
+    // Add status filter
+    if (filters.status) {
+      conditions.push(eq(shifts.status, filters.status));
+    }
+
+    const results = await this.db
+      .select({
+        id: shifts.id,
+        userId: shifts.userId,
+        clockInTime: shifts.clockInTime,
+        clockOutTime: shifts.clockOutTime,
+        status: shifts.status,
+        createdAt: shifts.createdAt,
+        updatedAt: shifts.updatedAt,
+      })
+      .from(shifts)
+      .where(and(...conditions))
+      .orderBy(desc(shifts.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    return results as Shift[];
+  }
+
   async countByUserId(userId: string): Promise<number> {
     const [result] = await this.db
       .select({ count: sql<number>`count(*)` })
       .from(shifts)
       .where(eq(shifts.userId, userId));
+
+    return result.count;
+  }
+
+  async countByUserIdWithFilters(
+    userId: string,
+    filters: ShiftFilters,
+  ): Promise<number> {
+    const conditions = [eq(shifts.userId, userId)];
+
+    // Add date range filters
+    if (filters.startDate) {
+      conditions.push(gte(shifts.createdAt, new Date(filters.startDate)));
+    }
+    if (filters.endDate) {
+      // Add one day to include the end date
+      const endDate = new Date(filters.endDate);
+      endDate.setDate(endDate.getDate() + 1);
+      conditions.push(lte(shifts.createdAt, endDate));
+    }
+
+    // Add status filter
+    if (filters.status) {
+      conditions.push(eq(shifts.status, filters.status));
+    }
+
+    const [result] = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(shifts)
+      .where(and(...conditions));
 
     return result.count;
   }

@@ -3,7 +3,14 @@ import {
   CreateShiftDto,
   UpdateShiftDto,
   ShiftWithUser,
+  ShiftStatus,
 } from '../entities/shift.entity';
+
+export interface ShiftFilters {
+  startDate?: string;
+  endDate?: string;
+  status?: ShiftStatus;
+}
 
 export interface IShiftRepository {
   create(createShiftDto: CreateShiftDto): Promise<Shift>;
@@ -24,5 +31,15 @@ export interface IShiftRepository {
     limit?: number,
     offset?: number,
   ): Promise<Shift[]>;
+  findHistoryByUserIdWithFilters(
+    userId: string,
+    filters: ShiftFilters,
+    limit?: number,
+    offset?: number,
+  ): Promise<Shift[]>;
   countByUserId(userId: string): Promise<number>;
+  countByUserIdWithFilters(
+    userId: string,
+    filters: ShiftFilters,
+  ): Promise<number>;
 }

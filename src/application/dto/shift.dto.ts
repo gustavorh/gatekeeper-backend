@@ -1,5 +1,12 @@
-import { IsString, IsOptional, IsUUID, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsUUID,
+  IsDateString,
+  IsEnum,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { ShiftStatus } from '../../domain/entities/shift.entity';
 
 /**
  * DTO for clock-in request
@@ -18,7 +25,7 @@ export class ClockOutDto {
 }
 
 /**
- * DTO for shift history request
+ * DTO for shift history request with filters
  */
 export class ShiftHistoryDto {
   @ApiProperty({
@@ -44,6 +51,34 @@ export class ShiftHistoryDto {
   })
   @IsOptional()
   offset?: number;
+
+  @ApiProperty({
+    description: 'Start date for filtering (YYYY-MM-DD)',
+    example: '2024-01-01',
+    required: false,
+  })
+  @IsOptional()
+  @IsDateString({}, { message: 'Start date must be a valid date string' })
+  startDate?: string;
+
+  @ApiProperty({
+    description: 'End date for filtering (YYYY-MM-DD)',
+    example: '2024-12-31',
+    required: false,
+  })
+  @IsOptional()
+  @IsDateString({}, { message: 'End date must be a valid date string' })
+  endDate?: string;
+
+  @ApiProperty({
+    description: 'Shift status for filtering',
+    example: 'active',
+    enum: ['pending', 'active', 'completed'],
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(ShiftStatus, { message: 'Status must be a valid shift status' })
+  status?: ShiftStatus;
 }
 
 /**

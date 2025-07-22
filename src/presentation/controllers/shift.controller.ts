@@ -31,6 +31,7 @@ import {
   ApiQuery,
   ApiParam,
 } from '@nestjs/swagger';
+import { ShiftStatus } from '../../domain/entities/shift.entity';
 
 /**
  * Shift controller
@@ -183,14 +184,15 @@ export class ShiftController {
 
   /**
    * Get shift history endpoint
-   * Returns paginated shift history for the authenticated user
+   * Returns paginated shift history for the authenticated user with optional filters
    */
   @Get('history')
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get shift history',
-    description: 'Get paginated shift history for the authenticated user.',
+    description:
+      'Get paginated shift history for the authenticated user with optional date range and status filters.',
   })
   @ApiQuery({
     name: 'limit',
@@ -205,6 +207,27 @@ export class ShiftController {
     description: 'Number of shifts to skip',
     type: Number,
     example: 0,
+  })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    description: 'Start date for filtering (YYYY-MM-DD)',
+    type: String,
+    example: '2024-01-01',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    description: 'End date for filtering (YYYY-MM-DD)',
+    type: String,
+    example: '2024-12-31',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    description: 'Shift status for filtering',
+    enum: ['pending', 'active', 'completed'],
+    example: 'active',
   })
   @ApiResponse({
     status: 200,
@@ -223,14 +246,38 @@ export class ShiftController {
     @CurrentUser() user: any,
     @Query('limit') limit?: number,
     @Query('offset') offset?: number,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('status') status?: string,
   ): Promise<ShiftHistoryResponseDto> {
     try {
-      const result = await this.shiftService.getShiftHistory(
-        user.id,
-        limit || 10,
-        offset || 0,
-      );
-      return result as ShiftHistoryResponseDto;
+      // Check if any filters are provided
+      const hasFilters = startDate || endDate || status;
+
+      if (hasFilters) {
+        // Use filtered method
+        const filters = {
+          startDate,
+          endDate,
+          status: status as ShiftStatus | undefined,
+        };
+
+        const result = await this.shiftService.getShiftHistoryWithFilters(
+          user.id,
+          filters,
+          limit || 10,
+          offset || 0,
+        );
+        return result as ShiftHistoryResponseDto;
+      } else {
+        // Use original method for backward compatibility
+        const result = await this.shiftService.getShiftHistory(
+          user.id,
+          limit || 10,
+          offset || 0,
+        );
+        return result as ShiftHistoryResponseDto;
+      }
     } catch (error) {
       throw new BadRequestException({
         message: 'Failed to get shift history',
@@ -241,7 +288,7 @@ export class ShiftController {
 
   /**
    * Get shift history for specific user (admin endpoint)
-   * Returns paginated shift history for a specific user
+   * Returns paginated shift history for a specific user with optional filters
    */
   @Get('history/:userId')
   @HttpCode(HttpStatus.OK)
@@ -249,7 +296,7 @@ export class ShiftController {
   @ApiOperation({
     summary: 'Get shift history for specific user',
     description:
-      'Get paginated shift history for a specific user (admin only).',
+      'Get paginated shift history for a specific user with optional date range and status filters (admin only).',
   })
   @ApiParam({
     name: 'userId',
@@ -270,6 +317,27 @@ export class ShiftController {
     type: Number,
     example: 0,
   })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    description: 'Start date for filtering (YYYY-MM-DD)',
+    type: String,
+    example: '2024-01-01',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    description: 'End date for filtering (YYYY-MM-DD)',
+    type: String,
+    example: '2024-12-31',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    description: 'Shift status for filtering',
+    enum: ['pending', 'active', 'completed'],
+    example: 'active',
+  })
   @ApiResponse({
     status: 200,
     description: 'Shift history retrieved successfully',
@@ -287,14 +355,38 @@ export class ShiftController {
     @Param('userId') userId: string,
     @Query('limit') limit?: number,
     @Query('offset') offset?: number,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('status') status?: string,
   ): Promise<ShiftHistoryResponseDto> {
     try {
-      const result = await this.shiftService.getShiftHistory(
-        userId,
-        limit || 10,
-        offset || 0,
-      );
-      return result as ShiftHistoryResponseDto;
+      // Check if any filters are provided
+      const hasFilters = startDate || endDate || status;
+
+      if (hasFilters) {
+        // Use filtered method
+        const filters = {
+          startDate,
+          endDate,
+          status: status as ShiftStatus | undefined,
+        };
+
+        const result = await this.shiftService.getShiftHistoryWithFilters(
+          userId,
+          filters,
+          limit || 10,
+          offset || 0,
+        );
+        return result as ShiftHistoryResponseDto;
+      } else {
+        // Use original method for backward compatibility
+        const result = await this.shiftService.getShiftHistory(
+          userId,
+          limit || 10,
+          offset || 0,
+        );
+        return result as ShiftHistoryResponseDto;
+      }
     } catch (error) {
       throw new BadRequestException({
         message: 'Failed to get shift history',

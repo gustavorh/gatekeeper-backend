@@ -1,4 +1,5 @@
 import { Shift, ShiftWithUser } from '../entities/shift.entity';
+import { ShiftFilters } from '../repositories/shift.repository.interface';
 
 export interface IShiftService {
   clockIn(userId: string): Promise<Shift>;
@@ -6,6 +7,15 @@ export interface IShiftService {
   getCurrentShift(userId: string): Promise<Shift | null>;
   getShiftHistory(
     userId: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<{
+    shifts: Shift[];
+    total: number;
+  }>;
+  getShiftHistoryWithFilters(
+    userId: string,
+    filters: ShiftFilters,
     limit?: number,
     offset?: number,
   ): Promise<{

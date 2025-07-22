@@ -12,6 +12,7 @@ import {
   ShiftWithUser,
   ShiftStatus,
 } from '../../domain/entities/shift.entity';
+import { ShiftFilters } from '../../domain/repositories/shift.repository.interface';
 
 @Injectable()
 export class ShiftService implements IShiftService {
@@ -115,6 +116,35 @@ export class ShiftService implements IShiftService {
 
     // Get total count
     const total = await this.shiftRepository.countByUserId(userId);
+
+    return { shifts, total };
+  }
+
+  async getShiftHistoryWithFilters(
+    userId: string,
+    filters: ShiftFilters,
+    limit: number = 10,
+    offset: number = 0,
+  ): Promise<{ shifts: Shift[]; total: number }> {
+    // Validate that user exists
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Get shift history with filters
+    const shifts = await this.shiftRepository.findHistoryByUserIdWithFilters(
+      userId,
+      filters,
+      limit,
+      offset,
+    );
+
+    // Get total count with filters
+    const total = await this.shiftRepository.countByUserIdWithFilters(
+      userId,
+      filters,
+    );
 
     return { shifts, total };
   }
