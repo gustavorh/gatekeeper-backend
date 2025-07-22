@@ -56,6 +56,26 @@ export class ShiftRepository implements IShiftRepository {
     return results as Shift[];
   }
 
+  async findByUserIdAndDateRange(
+    userId: string,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<Shift[]> {
+    const results = await this.db
+      .select()
+      .from(shifts)
+      .where(
+        and(
+          eq(shifts.userId, userId),
+          gte(shifts.clockInTime, startDate),
+          lte(shifts.clockInTime, endDate),
+        ),
+      )
+      .orderBy(desc(shifts.clockInTime));
+
+    return results as Shift[];
+  }
+
   async findActiveByUserId(userId: string): Promise<Shift | null> {
     const [shift] = await this.db
       .select()
@@ -107,6 +127,8 @@ export class ShiftRepository implements IShiftRepository {
         userId: shifts.userId,
         clockInTime: shifts.clockInTime,
         clockOutTime: shifts.clockOutTime,
+        lunchStartTime: shifts.lunchStartTime,
+        lunchEndTime: shifts.lunchEndTime,
         status: shifts.status,
         createdAt: shifts.createdAt,
         updatedAt: shifts.updatedAt,
@@ -136,6 +158,8 @@ export class ShiftRepository implements IShiftRepository {
         userId: shifts.userId,
         clockInTime: shifts.clockInTime,
         clockOutTime: shifts.clockOutTime,
+        lunchStartTime: shifts.lunchStartTime,
+        lunchEndTime: shifts.lunchEndTime,
         status: shifts.status,
         createdAt: shifts.createdAt,
         updatedAt: shifts.updatedAt,
@@ -168,6 +192,8 @@ export class ShiftRepository implements IShiftRepository {
         userId: shifts.userId,
         clockInTime: shifts.clockInTime,
         clockOutTime: shifts.clockOutTime,
+        lunchStartTime: shifts.lunchStartTime,
+        lunchEndTime: shifts.lunchEndTime,
         status: shifts.status,
         createdAt: shifts.createdAt,
         updatedAt: shifts.updatedAt,
@@ -211,6 +237,8 @@ export class ShiftRepository implements IShiftRepository {
         userId: shifts.userId,
         clockInTime: shifts.clockInTime,
         clockOutTime: shifts.clockOutTime,
+        lunchStartTime: shifts.lunchStartTime,
+        lunchEndTime: shifts.lunchEndTime,
         status: shifts.status,
         createdAt: shifts.createdAt,
         updatedAt: shifts.updatedAt,

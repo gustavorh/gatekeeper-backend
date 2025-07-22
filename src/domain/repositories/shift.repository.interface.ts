@@ -16,6 +16,11 @@ export interface IShiftRepository {
   create(createShiftDto: CreateShiftDto): Promise<Shift>;
   findById(id: string): Promise<Shift | null>;
   findByUserId(userId: string): Promise<Shift[]>;
+  findByUserIdAndDateRange(
+    userId: string,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<Shift[]>;
   findActiveByUserId(userId: string): Promise<Shift | null>;
   findPendingByUserId(userId: string): Promise<Shift | null>;
   update(id: string, updateShiftDto: UpdateShiftDto): Promise<Shift>;

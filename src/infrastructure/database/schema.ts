@@ -69,6 +69,8 @@ export const shifts = mysqlTable('shifts', {
     .references(() => users.id),
   clockInTime: timestamp('clock_in_time').notNull(),
   clockOutTime: timestamp('clock_out_time'),
+  lunchStartTime: timestamp('lunch_start_time'),
+  lunchEndTime: timestamp('lunch_end_time'),
   status: mysqlEnum('status', ['pending', 'active', 'completed'])
     .notNull()
     .default('pending'),

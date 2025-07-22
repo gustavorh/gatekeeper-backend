@@ -2,9 +2,11 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { DatabaseModule } from '../../infrastructure/database/database.module';
 import { ShiftService } from '../services/shift.service';
+import { AnalyticsService } from '../services/analytics.service';
 import { ShiftRepository } from '../../infrastructure/repositories/shift.repository';
 import { UserRepository } from '../../infrastructure/repositories/user.repository';
 import { ShiftController } from '../../presentation/controllers/shift.controller';
+import { AnalyticsController } from '../../presentation/controllers/analytics.controller';
 import { JwtAuthGuard } from '../../presentation/middleware/jwt-auth.guard';
 
 @Module({
@@ -15,9 +17,10 @@ import { JwtAuthGuard } from '../../presentation/middleware/jwt-auth.guard';
       signOptions: { expiresIn: '24h' },
     }),
   ],
-  controllers: [ShiftController],
+  controllers: [ShiftController, AnalyticsController],
   providers: [
     ShiftService,
+    AnalyticsService,
     ShiftRepository,
     UserRepository,
     JwtAuthGuard,
@@ -30,6 +33,6 @@ import { JwtAuthGuard } from '../../presentation/middleware/jwt-auth.guard';
       useClass: UserRepository,
     },
   ],
-  exports: [ShiftService],
+  exports: [ShiftService, AnalyticsService],
 })
 export class ShiftModule {}
