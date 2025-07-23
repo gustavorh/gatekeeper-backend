@@ -1,18 +1,6 @@
 import { User } from '../entities/user.entity';
 import { AuthResponse } from '../../application/dto/response.dto';
-
-export interface LoginDto {
-  rut: string;
-  password: string;
-}
-
-export interface RegisterDto {
-  rut: string;
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-}
+import { LoginDto, RegisterDto } from '../../application/dto/auth.dto';
 
 export interface AuthResult {
   user: Omit<User, 'password'>;

@@ -9,12 +9,14 @@ import {
   CreatePermissionAdminDto,
 } from '../dto/admin.dto';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { AuthService } from './auth.service';
 
 describe('AdminService', () => {
   let service: AdminService;
   let userRepository: jest.Mocked<IUserRepository>;
   let roleRepository: jest.Mocked<IRoleRepository>;
   let permissionRepository: jest.Mocked<IPermissionRepository>;
+  let authService: AuthService;
 
   beforeEach(async () => {
     const mockUserRepository = {
@@ -51,6 +53,14 @@ describe('AdminService', () => {
       findPermissionsByRole: jest.fn(),
     };
 
+    const mockAuthService = {
+      register: jest.fn(),
+      login: jest.fn(),
+      validateToken: jest.fn(),
+      hashPassword: jest.fn(),
+      comparePassword: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AdminService,
@@ -66,6 +76,10 @@ describe('AdminService', () => {
           provide: 'IPermissionRepository',
           useValue: mockPermissionRepository,
         },
+        {
+          provide: AuthService,
+          useValue: mockAuthService,
+        },
       ],
     }).compile();
 
@@ -73,6 +87,7 @@ describe('AdminService', () => {
     userRepository = module.get('IUserRepository');
     roleRepository = module.get('IRoleRepository');
     permissionRepository = module.get('IPermissionRepository');
+    authService = module.get<AuthService>(AuthService);
   });
 
   it('should be defined', () => {
@@ -102,19 +117,36 @@ describe('AdminService', () => {
         updatedAt: new Date(),
       };
 
-      userRepository.findByRut.mockResolvedValue(null);
-      userRepository.findByEmail.mockResolvedValue(null);
-      userRepository.create.mockResolvedValue(mockUser);
+      const mockAuthResponse = {
+        user: {
+          id: 'user-1',
+          rut: '12345678-9',
+          email: 'test@example.com',
+          firstName: 'John',
+          lastName: 'Doe',
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          roles: [],
+        },
+        token: 'mock-token',
+      };
+
+      authService.register = jest.fn().mockResolvedValue(mockAuthResponse);
+      userRepository.findById.mockResolvedValue(mockUser);
       roleRepository.assignRoleToUser.mockResolvedValue();
 
       const result = await service.createUser(createUserDto);
 
       expect(result).toEqual(mockUser);
-      expect(userRepository.findByRut).toHaveBeenCalledWith('12345678-9');
-      expect(userRepository.findByEmail).toHaveBeenCalledWith(
-        'test@example.com',
-      );
-      expect(userRepository.create).toHaveBeenCalled();
+      expect(authService.register).toHaveBeenCalledWith({
+        rut: '12345678-9',
+        email: 'test@example.com',
+        password: 'password123',
+        firstName: 'John',
+        lastName: 'Doe',
+      });
+      expect(userRepository.findById).toHaveBeenCalledWith('user-1');
       expect(roleRepository.assignRoleToUser).toHaveBeenCalledWith(
         'user-1',
         'role-1',
@@ -130,7 +162,11 @@ describe('AdminService', () => {
         lastName: 'Doe',
       };
 
-      userRepository.findByRut.mockResolvedValue({} as any);
+      authService.register = jest
+        .fn()
+        .mockRejectedValue(
+          new BadRequestException('User with this RUT already exists'),
+        );
 
       await expect(service.createUser(createUserDto)).rejects.toThrow(
         BadRequestException,
@@ -146,8 +182,11 @@ describe('AdminService', () => {
         lastName: 'Doe',
       };
 
-      userRepository.findByRut.mockResolvedValue(null);
-      userRepository.findByEmail.mockResolvedValue({} as any);
+      authService.register = jest
+        .fn()
+        .mockRejectedValue(
+          new BadRequestException('User with this email already exists'),
+        );
 
       await expect(service.createUser(createUserDto)).rejects.toThrow(
         BadRequestException,

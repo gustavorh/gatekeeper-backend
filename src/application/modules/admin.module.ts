@@ -8,10 +8,12 @@ import { JwtAuthGuard } from '../../presentation/middleware/jwt-auth.guard';
 import { UserRepository } from '../../infrastructure/repositories/user.repository';
 import { RoleRepository } from '../../infrastructure/repositories/role.repository';
 import { PermissionRepository } from '../../infrastructure/repositories/permission.repository';
+import { AuthModule } from './auth.module';
 
 @Module({
   imports: [
     DatabaseModule,
+    AuthModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'your-secret-key',
       signOptions: { expiresIn: '24h' },

@@ -8,9 +8,10 @@ import {
   MaxLength,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { RegisterDto } from './auth.dto';
 
 // User Management DTOs
-export class CreateUserAdminDto {
+export class CreateUserAdminDto implements RegisterDto {
   @ApiProperty({ description: 'RUT del usuario', example: '12345678-9' })
   @IsString()
   rut: string;

@@ -36,7 +36,8 @@ import {
   UserListWithRolesResponse,
   UserWithRolesResponseDto,
 } from '../dto/admin.dto';
-import * as bcrypt from 'bcryptjs';
+import { AuthService } from './auth.service';
+import { RegisterDto } from '../dto/auth.dto';
 
 @Injectable()
 export class AdminService {
@@ -47,38 +48,28 @@ export class AdminService {
     private readonly roleRepository: IRoleRepository,
     @Inject('IPermissionRepository')
     private readonly permissionRepository: IPermissionRepository,
+    private readonly authService: AuthService,
   ) {}
 
   // User Management
   async createUser(createUserDto: CreateUserAdminDto): Promise<User> {
-    // Check if user already exists
-    const existingUserByRut = await this.userRepository.findByRut(
-      createUserDto.rut,
-    );
-    if (existingUserByRut) {
-      throw new BadRequestException('User with this RUT already exists');
-    }
-
-    const existingUserByEmail = await this.userRepository.findByEmail(
-      createUserDto.email,
-    );
-    if (existingUserByEmail) {
-      throw new BadRequestException('User with this email already exists');
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-
-    // Create user
-    const userData: CreateUserDto = {
+    // Extract RegisterDto fields for auth service
+    const registerData: RegisterDto = {
       rut: createUserDto.rut,
       email: createUserDto.email,
-      password: hashedPassword,
+      password: createUserDto.password,
       firstName: createUserDto.firstName,
       lastName: createUserDto.lastName,
     };
 
-    const user = await this.userRepository.create(userData);
+    // Use auth service to create user (this handles password hashing and validation)
+    const authResponse = await this.authService.register(registerData);
+
+    // Get the full user object from repository (including password field)
+    const user = await this.userRepository.findById(authResponse.user.id);
+    if (!user) {
+      throw new NotFoundException('User not found after creation');
+    }
 
     // Assign roles if provided
     if (createUserDto.roleIds && createUserDto.roleIds.length > 0) {

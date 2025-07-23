@@ -6,11 +6,8 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
-import {
-  IAuthService,
-  LoginDto,
-  RegisterDto,
-} from '../../domain/services/auth.service.interface';
+import { IAuthService } from '../../domain/services/auth.service.interface';
+import { LoginDto, RegisterDto } from '../dto/auth.dto';
 import { IUserRepository } from '../../domain/repositories/user.repository.interface';
 import { IRoleRepository } from '../../domain/repositories/role.repository.interface';
 import { User } from '../../domain/entities/user.entity';
