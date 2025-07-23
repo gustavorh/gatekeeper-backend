@@ -340,19 +340,35 @@ export class AdminController {
   }
 
   @Delete('users/:id')
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Delete user',
     description: 'Delete a user by ID. Admin role required.',
   })
   @ApiParam({ name: 'id', description: 'User ID', type: String })
   @ApiResponse({
-    status: 204,
+    status: 200,
     description: 'User deleted successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        message: { type: 'string' },
+        data: { type: 'null' },
+        timestamp: { type: 'string' },
+        endpoint: { type: 'string' },
+      },
+    },
   })
   @ApiNotFoundResponse({ description: 'User not found' })
-  async deleteUser(@Param('id') id: string): Promise<void> {
+  async deleteUser(
+    @Param('id') id: string,
+  ): Promise<{ success: boolean; message: string }> {
     await this.adminService.deleteUser(id);
+    return {
+      success: true,
+      message: 'User deleted successfully',
+    };
   }
 
   // ===================================
@@ -497,19 +513,35 @@ export class AdminController {
   }
 
   @Delete('roles/:id')
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Delete role',
     description: 'Delete a role by ID. Admin role required.',
   })
   @ApiParam({ name: 'id', description: 'Role ID', type: String })
   @ApiResponse({
-    status: 204,
+    status: 200,
     description: 'Role deleted successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        message: { type: 'string' },
+        data: { type: 'null' },
+        timestamp: { type: 'string' },
+        endpoint: { type: 'string' },
+      },
+    },
   })
   @ApiNotFoundResponse({ description: 'Role not found' })
-  async deleteRole(@Param('id') id: string): Promise<void> {
+  async deleteRole(
+    @Param('id') id: string,
+  ): Promise<{ success: boolean; message: string }> {
     await this.adminService.deleteRole(id);
+    return {
+      success: true,
+      message: 'Role deleted successfully',
+    };
   }
 
   // ===================================
@@ -637,18 +669,34 @@ export class AdminController {
   }
 
   @Delete('permissions/:id')
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Delete permission',
     description: 'Delete a permission by ID. Admin role required.',
   })
   @ApiParam({ name: 'id', description: 'Permission ID', type: String })
   @ApiResponse({
-    status: 204,
+    status: 200,
     description: 'Permission deleted successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        message: { type: 'string' },
+        data: { type: 'null' },
+        timestamp: { type: 'string' },
+        endpoint: { type: 'string' },
+      },
+    },
   })
   @ApiNotFoundResponse({ description: 'Permission not found' })
-  async deletePermission(@Param('id') id: string): Promise<void> {
+  async deletePermission(
+    @Param('id') id: string,
+  ): Promise<{ success: boolean; message: string }> {
     await this.adminService.deletePermission(id);
+    return {
+      success: true,
+      message: 'Permission deleted successfully',
+    };
   }
 }

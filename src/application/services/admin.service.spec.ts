@@ -132,8 +132,30 @@ describe('AdminService', () => {
         token: 'mock-token',
       };
 
+      const mockUserRole = {
+        id: 'user-role-id',
+        name: 'user',
+        description: 'Regular user',
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const mockCurrentUserRoles = [
+        {
+          id: 'user-role-id',
+          name: 'user',
+          description: 'Regular user',
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+
       authService.register = jest.fn().mockResolvedValue(mockAuthResponse);
       userRepository.findById.mockResolvedValue(mockUser);
+      roleRepository.findByName.mockResolvedValue(mockUserRole);
+      roleRepository.findUserRoles.mockResolvedValue(mockCurrentUserRoles);
       roleRepository.assignRoleToUser.mockResolvedValue();
 
       const result = await service.createUser(createUserDto);
@@ -147,6 +169,9 @@ describe('AdminService', () => {
         lastName: 'Doe',
       });
       expect(userRepository.findById).toHaveBeenCalledWith('user-1');
+      expect(roleRepository.findByName).toHaveBeenCalledWith('user');
+      expect(roleRepository.findUserRoles).toHaveBeenCalledWith('user-1');
+      // Should not assign role-1 since it's not in the current roles
       expect(roleRepository.assignRoleToUser).toHaveBeenCalledWith(
         'user-1',
         'role-1',
@@ -191,6 +216,132 @@ describe('AdminService', () => {
       await expect(service.createUser(createUserDto)).rejects.toThrow(
         BadRequestException,
       );
+    });
+
+    it('should throw NotFoundException if default user role not found', async () => {
+      const createUserDto: CreateUserAdminDto = {
+        rut: '12345678-9',
+        email: 'test@example.com',
+        password: 'password123',
+        firstName: 'John',
+        lastName: 'Doe',
+      };
+
+      const mockAuthResponse = {
+        user: {
+          id: 'user-1',
+          rut: '12345678-9',
+          email: 'test@example.com',
+          firstName: 'John',
+          lastName: 'Doe',
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          roles: [],
+        },
+        token: 'mock-token',
+      };
+
+      const mockUser = {
+        id: 'user-1',
+        rut: '12345678-9',
+        email: 'test@example.com',
+        password: 'hashed-password',
+        firstName: 'John',
+        lastName: 'Doe',
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      authService.register = jest.fn().mockResolvedValue(mockAuthResponse);
+      userRepository.findById.mockResolvedValue(mockUser);
+      roleRepository.findByName.mockResolvedValue(null); // User role not found
+
+      await expect(service.createUser(createUserDto)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(roleRepository.findByName).toHaveBeenCalledWith('user');
+    });
+
+    it('should not assign duplicate roles when role is already assigned', async () => {
+      const createUserDto: CreateUserAdminDto = {
+        rut: '12345678-9',
+        email: 'test@example.com',
+        password: 'password123',
+        firstName: 'John',
+        lastName: 'Doe',
+        roleIds: ['user-role-id'], // This role is already assigned
+      };
+
+      const mockUser = {
+        id: 'user-1',
+        rut: '12345678-9',
+        email: 'test@example.com',
+        password: 'hashed-password',
+        firstName: 'John',
+        lastName: 'Doe',
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const mockAuthResponse = {
+        user: {
+          id: 'user-1',
+          rut: '12345678-9',
+          email: 'test@example.com',
+          firstName: 'John',
+          lastName: 'Doe',
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          roles: [],
+        },
+        token: 'mock-token',
+      };
+
+      const mockUserRole = {
+        id: 'user-role-id',
+        name: 'user',
+        description: 'Regular user',
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const mockCurrentUserRoles = [
+        {
+          id: 'user-role-id',
+          name: 'user',
+          description: 'Regular user',
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+
+      authService.register = jest.fn().mockResolvedValue(mockAuthResponse);
+      userRepository.findById.mockResolvedValue(mockUser);
+      roleRepository.findByName.mockResolvedValue(mockUserRole);
+      roleRepository.findUserRoles.mockResolvedValue(mockCurrentUserRoles);
+      roleRepository.assignRoleToUser.mockResolvedValue();
+
+      const result = await service.createUser(createUserDto);
+
+      expect(result).toEqual(mockUser);
+      expect(authService.register).toHaveBeenCalledWith({
+        rut: '12345678-9',
+        email: 'test@example.com',
+        password: 'password123',
+        firstName: 'John',
+        lastName: 'Doe',
+      });
+      expect(userRepository.findById).toHaveBeenCalledWith('user-1');
+      expect(roleRepository.findByName).toHaveBeenCalledWith('user');
+      expect(roleRepository.findUserRoles).toHaveBeenCalledWith('user-1');
+      // Should not call assignRoleToUser since the role is already assigned
+      expect(roleRepository.assignRoleToUser).not.toHaveBeenCalled();
     });
   });
 

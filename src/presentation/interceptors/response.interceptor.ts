@@ -23,7 +23,7 @@ export class ResponseInterceptor<T>
       map((data) => ({
         success: true,
         message: this.getDefaultMessage(context),
-        data,
+        data: data === undefined ? null : data,
         timestamp: new Date().toISOString(),
         endpoint,
       })),

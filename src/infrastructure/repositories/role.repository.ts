@@ -96,4 +96,14 @@ export class RoleRepository implements IRoleRepository {
 
     return results;
   }
+
+  async removeRoleFromUser(userId: string, roleId: string): Promise<void> {
+    await this.db
+      .delete(userRoles)
+      .where(eq(userRoles.userId, userId) && eq(userRoles.roleId, roleId));
+  }
+
+  async removeAllUserRoles(userId: string): Promise<void> {
+    await this.db.delete(userRoles).where(eq(userRoles.userId, userId));
+  }
 }

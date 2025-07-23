@@ -71,10 +71,23 @@ export class AdminService {
       throw new NotFoundException('User not found after creation');
     }
 
-    // Assign roles if provided
+    // Get the "user" role to check if it's already assigned
+    const userRole = await this.roleRepository.findByName('user');
+    if (!userRole) {
+      throw new NotFoundException('Default "user" role not found');
+    }
+
+    // Get current user roles to check for duplicates
+    const currentUserRoles = await this.roleRepository.findUserRoles(user.id);
+    const currentRoleIds = currentUserRoles.map((role) => role.id);
+
+    // Assign additional roles if provided, avoiding duplicates
     if (createUserDto.roleIds && createUserDto.roleIds.length > 0) {
       for (const roleId of createUserDto.roleIds) {
-        await this.roleRepository.assignRoleToUser(user.id, roleId);
+        // Skip if the role is already assigned (including the default "user" role)
+        if (!currentRoleIds.includes(roleId)) {
+          await this.roleRepository.assignRoleToUser(user.id, roleId);
+        }
       }
     }
 
@@ -209,6 +222,10 @@ export class AdminService {
       throw new NotFoundException('User not found');
     }
 
+    // First, delete all user_roles records associated with the user
+    await this.roleRepository.removeAllUserRoles(id);
+
+    // Then, delete the user record
     await this.userRepository.delete(id);
   }
 
