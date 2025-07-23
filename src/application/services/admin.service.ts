@@ -447,4 +447,81 @@ export class AdminService {
       permissions,
     };
   }
+
+  // Dashboard Data
+  async getDashboardData() {
+    try {
+      // Get basic statistics
+      const allUsers = await this.userRepository.findAll();
+      const allRoles = await this.roleRepository.findAll();
+      const allPermissions = await this.permissionRepository.findAll();
+
+      // Calculate active users (users with recent activity - simplified for now)
+      const activeUsers = allUsers.filter((user) => user.isActive).length;
+
+      // For now, we'll return mock data for shifts since we don't have shift repository
+      // In a real implementation, you'd inject the shift repository
+      const totalShifts = 0; // Mock data
+      const activeShifts = 0; // Mock data
+
+      // Mock recent activities
+      const recentActivities = [
+        {
+          id: '1',
+          type: 'user_created',
+          description: 'Nuevo usuario registrado',
+          userId: '1',
+          userName: 'Usuario Ejemplo',
+          timestamp: new Date().toISOString(),
+        },
+        {
+          id: '2',
+          type: 'shift_created',
+          description: 'Nuevo turno iniciado',
+          userId: '1',
+          userName: 'Usuario Ejemplo',
+          timestamp: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+        },
+      ];
+
+      // Mock top users
+      const topUsers = [
+        {
+          id: '1',
+          name: 'Usuario Ejemplo',
+          totalShifts: 15,
+          totalHours: 120.5,
+        },
+        {
+          id: '2',
+          name: 'Otro Usuario',
+          totalShifts: 12,
+          totalHours: 96.0,
+        },
+      ];
+
+      return {
+        success: true,
+        message: 'Dashboard data retrieved successfully',
+        data: {
+          stats: {
+            totalUsers: allUsers.length,
+            activeUsers,
+            totalShifts,
+            activeShifts,
+            totalRoles: allRoles.length,
+            totalPermissions: allPermissions.length,
+          },
+          recentActivities,
+          topUsers,
+        },
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      throw new BadRequestException({
+        message: 'Failed to retrieve dashboard data',
+        error: error.message,
+      });
+    }
+  }
 }

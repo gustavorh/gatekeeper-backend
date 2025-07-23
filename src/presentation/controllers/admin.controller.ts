@@ -69,6 +69,82 @@ export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
   // ===================================
+  // DASHBOARD ENDPOINTS
+  // ===================================
+
+  @Get('dashboard')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get admin dashboard data',
+    description:
+      'Retrieve system statistics and recent activities for admin dashboard. Admin role required.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Dashboard data retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        message: { type: 'string' },
+        data: {
+          type: 'object',
+          properties: {
+            stats: {
+              type: 'object',
+              properties: {
+                totalUsers: { type: 'number' },
+                activeUsers: { type: 'number' },
+                totalShifts: { type: 'number' },
+                activeShifts: { type: 'number' },
+                totalRoles: { type: 'number' },
+                totalPermissions: { type: 'number' },
+              },
+            },
+            recentActivities: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string' },
+                  type: { type: 'string' },
+                  description: { type: 'string' },
+                  userId: { type: 'string' },
+                  userName: { type: 'string' },
+                  timestamp: { type: 'string' },
+                },
+              },
+            },
+            topUsers: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string' },
+                  name: { type: 'string' },
+                  totalShifts: { type: 'number' },
+                  totalHours: { type: 'number' },
+                },
+              },
+            },
+          },
+        },
+        timestamp: { type: 'string' },
+      },
+    },
+  })
+  async getDashboardData() {
+    try {
+      return await this.adminService.getDashboardData();
+    } catch (error) {
+      throw new BadRequestException({
+        message: 'Failed to retrieve dashboard data',
+        error: error.message,
+      });
+    }
+  }
+
+  // ===================================
   // USER MANAGEMENT ENDPOINTS
   // ===================================
 
