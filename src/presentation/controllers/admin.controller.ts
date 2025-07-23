@@ -30,6 +30,7 @@ import {
   UserResponseDto,
   RoleResponseDto,
   PermissionResponseDto,
+  UserListWithRolesResponse,
 } from '../../application/dto/admin.dto';
 import {
   ApiTags,
@@ -185,7 +186,7 @@ export class AdminController {
   @ApiOperation({
     summary: 'Get all users with pagination',
     description:
-      'Retrieve all users with optional search and pagination. Admin role required.',
+      'Retrieve all users with their roles and permissions, including optional search and pagination. Admin role required.',
   })
   @ApiQuery({
     name: 'page',
@@ -208,11 +209,64 @@ export class AdminController {
   @ApiResponse({
     status: 200,
     description: 'Users retrieved successfully',
-    type: UserListResponse,
+    schema: {
+      type: 'object',
+      properties: {
+        users: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string' },
+              rut: { type: 'string' },
+              email: { type: 'string' },
+              firstName: { type: 'string' },
+              lastName: { type: 'string' },
+              isActive: { type: 'boolean' },
+              createdAt: { type: 'string', format: 'date-time' },
+              updatedAt: { type: 'string', format: 'date-time' },
+              roles: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'string' },
+                    name: { type: 'string' },
+                    description: { type: 'string' },
+                    isActive: { type: 'boolean' },
+                    createdAt: { type: 'string', format: 'date-time' },
+                    updatedAt: { type: 'string', format: 'date-time' },
+                    permissions: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          id: { type: 'string' },
+                          name: { type: 'string' },
+                          description: { type: 'string' },
+                          resource: { type: 'string' },
+                          action: { type: 'string' },
+                          isActive: { type: 'boolean' },
+                          createdAt: { type: 'string', format: 'date-time' },
+                          updatedAt: { type: 'string', format: 'date-time' },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        total: { type: 'number' },
+        page: { type: 'number' },
+        limit: { type: 'number' },
+      },
+    },
   })
   async getUsers(
     @Query() paginationDto: PaginationDto,
-  ): Promise<UserListResponse> {
+  ): Promise<UserListWithRolesResponse> {
     return await this.adminService.getUsers(paginationDto);
   }
 

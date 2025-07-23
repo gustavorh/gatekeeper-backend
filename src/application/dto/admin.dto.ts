@@ -342,3 +342,79 @@ export class PermissionListResponse {
   @ApiProperty({ description: 'Elementos por página' })
   limit: number;
 }
+
+// Enhanced User Response DTOs with Roles and Permissions
+export class UserRolePermissionDto {
+  @ApiProperty({ description: 'ID del rol' })
+  id: string;
+
+  @ApiProperty({ description: 'Nombre del rol' })
+  name: string;
+
+  @ApiProperty({ description: 'Descripción del rol' })
+  description: string;
+
+  @ApiProperty({ description: 'Estado activo del rol' })
+  isActive: boolean;
+
+  @ApiProperty({ description: 'Fecha de creación' })
+  createdAt: Date;
+
+  @ApiProperty({ description: 'Fecha de actualización' })
+  updatedAt: Date;
+
+  @ApiProperty({
+    description: 'Permisos del rol',
+    type: [PermissionResponseDto],
+  })
+  permissions: PermissionResponseDto[];
+}
+
+export class UserWithRolesResponseDto {
+  @ApiProperty({ description: 'ID del usuario' })
+  id: string;
+
+  @ApiProperty({ description: 'RUT del usuario' })
+  rut: string;
+
+  @ApiProperty({ description: 'Email del usuario' })
+  email: string;
+
+  @ApiProperty({ description: 'Nombre del usuario' })
+  firstName: string;
+
+  @ApiProperty({ description: 'Apellido del usuario' })
+  lastName: string;
+
+  @ApiProperty({ description: 'Estado activo del usuario' })
+  isActive: boolean;
+
+  @ApiProperty({ description: 'Fecha de creación' })
+  createdAt: Date;
+
+  @ApiProperty({ description: 'Fecha de actualización' })
+  updatedAt: Date;
+
+  @ApiProperty({
+    description: 'Roles del usuario con sus permisos',
+    type: [UserRolePermissionDto],
+  })
+  roles: UserRolePermissionDto[];
+}
+
+export class UserListWithRolesResponse {
+  @ApiProperty({
+    description: 'Lista de usuarios con roles y permisos',
+    type: [UserWithRolesResponseDto],
+  })
+  users: UserWithRolesResponseDto[];
+
+  @ApiProperty({ description: 'Total de usuarios' })
+  total: number;
+
+  @ApiProperty({ description: 'Página actual' })
+  page: number;
+
+  @ApiProperty({ description: 'Elementos por página' })
+  limit: number;
+}

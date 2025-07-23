@@ -33,6 +33,8 @@ import {
   UserListResponse,
   RoleListResponse,
   PermissionListResponse,
+  UserListWithRolesResponse,
+  UserWithRolesResponseDto,
 } from '../dto/admin.dto';
 import * as bcrypt from 'bcryptjs';
 
@@ -88,7 +90,9 @@ export class AdminService {
     return user;
   }
 
-  async getUsers(paginationDto: PaginationDto): Promise<UserListResponse> {
+  async getUsers(
+    paginationDto: PaginationDto,
+  ): Promise<UserListWithRolesResponse> {
     const { page = 1, limit = 10, search } = paginationDto;
     const offset = (page - 1) * limit;
 
@@ -109,10 +113,32 @@ export class AdminService {
     }
 
     const total = filteredUsers.length;
-    const users = filteredUsers.slice(offset, offset + limit);
+    const paginatedUsers = filteredUsers.slice(offset, offset + limit);
+
+    // Get users with their roles and permissions
+    const usersWithRoles = await Promise.all(
+      paginatedUsers.map(async (user) => {
+        const userRoles = await this.roleRepository.findUserRoles(user.id);
+        const rolesWithPermissions = await Promise.all(
+          userRoles.map(async (role) => {
+            const permissions =
+              await this.permissionRepository.findPermissionsByRole(role.id);
+            return {
+              ...role,
+              permissions,
+            };
+          }),
+        );
+
+        return {
+          ...user,
+          roles: rolesWithPermissions,
+        };
+      }),
+    );
 
     return {
-      users,
+      users: usersWithRoles,
       total,
       page,
       limit,
