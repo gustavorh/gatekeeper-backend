@@ -290,4 +290,165 @@ export class ShiftRepository implements IShiftRepository {
 
     return result.count;
   }
+
+  async findAllActiveWithUsers(
+    limit: number = 50,
+    offset: number = 0,
+  ): Promise<ShiftWithUser[]> {
+    const results = await this.db
+      .select({
+        id: shifts.id,
+        userId: shifts.userId,
+        clockInTime: shifts.clockInTime,
+        clockOutTime: shifts.clockOutTime,
+        lunchStartTime: shifts.lunchStartTime,
+        lunchEndTime: shifts.lunchEndTime,
+        status: shifts.status,
+        createdAt: shifts.createdAt,
+        updatedAt: shifts.updatedAt,
+        user: {
+          id: users.id,
+          rut: users.rut,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          email: users.email,
+        },
+      })
+      .from(shifts)
+      .innerJoin(users, eq(shifts.userId, users.id))
+      .where(eq(shifts.status, ShiftStatus.ACTIVE))
+      .orderBy(desc(shifts.clockInTime))
+      .limit(limit)
+      .offset(offset);
+
+    return results as ShiftWithUser[];
+  }
+
+  async countAllActive(): Promise<number> {
+    const [result] = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(shifts)
+      .where(eq(shifts.status, ShiftStatus.ACTIVE));
+
+    return result.count;
+  }
+
+  async findAllWithUsers(
+    limit: number = 50,
+    offset: number = 0,
+  ): Promise<ShiftWithUser[]> {
+    const results = await this.db
+      .select({
+        id: shifts.id,
+        userId: shifts.userId,
+        clockInTime: shifts.clockInTime,
+        clockOutTime: shifts.clockOutTime,
+        lunchStartTime: shifts.lunchStartTime,
+        lunchEndTime: shifts.lunchEndTime,
+        status: shifts.status,
+        createdAt: shifts.createdAt,
+        updatedAt: shifts.updatedAt,
+        user: {
+          id: users.id,
+          rut: users.rut,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          email: users.email,
+        },
+      })
+      .from(shifts)
+      .innerJoin(users, eq(shifts.userId, users.id))
+      .orderBy(desc(shifts.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    return results as ShiftWithUser[];
+  }
+
+  async countAll(): Promise<number> {
+    const [result] = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(shifts);
+
+    return result.count;
+  }
+
+  async findAllWithUsersAndFilters(
+    filters: ShiftFilters,
+    limit: number = 50,
+    offset: number = 0,
+  ): Promise<ShiftWithUser[]> {
+    const conditions: any[] = [];
+
+    // Add date range filters
+    if (filters.startDate) {
+      conditions.push(gte(shifts.createdAt, new Date(filters.startDate)));
+    }
+    if (filters.endDate) {
+      // Add one day to include the end date
+      const endDate = new Date(filters.endDate);
+      endDate.setDate(endDate.getDate() + 1);
+      conditions.push(lte(shifts.createdAt, endDate));
+    }
+
+    // Add status filter
+    if (filters.status) {
+      conditions.push(eq(shifts.status, filters.status));
+    }
+
+    const results = await this.db
+      .select({
+        id: shifts.id,
+        userId: shifts.userId,
+        clockInTime: shifts.clockInTime,
+        clockOutTime: shifts.clockOutTime,
+        lunchStartTime: shifts.lunchStartTime,
+        lunchEndTime: shifts.lunchEndTime,
+        status: shifts.status,
+        createdAt: shifts.createdAt,
+        updatedAt: shifts.updatedAt,
+        user: {
+          id: users.id,
+          rut: users.rut,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          email: users.email,
+        },
+      })
+      .from(shifts)
+      .innerJoin(users, eq(shifts.userId, users.id))
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(shifts.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    return results as ShiftWithUser[];
+  }
+
+  async countAllWithFilters(filters: ShiftFilters): Promise<number> {
+    const conditions: any[] = [];
+
+    // Add date range filters
+    if (filters.startDate) {
+      conditions.push(gte(shifts.createdAt, new Date(filters.startDate)));
+    }
+    if (filters.endDate) {
+      // Add one day to include the end date
+      const endDate = new Date(filters.endDate);
+      endDate.setDate(endDate.getDate() + 1);
+      conditions.push(lte(shifts.createdAt, endDate));
+    }
+
+    // Add status filter
+    if (filters.status) {
+      conditions.push(eq(shifts.status, filters.status));
+    }
+
+    const [result] = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(shifts)
+      .where(conditions.length > 0 ? and(...conditions) : undefined);
+
+    return result.count;
+  }
 }

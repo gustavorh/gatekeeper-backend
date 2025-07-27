@@ -15,6 +15,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { AdminService } from '../../application/services/admin.service';
+import { ShiftService } from '../../application/services/shift.service';
 import { AdminAuthGuard } from '../middleware/admin-auth.guard';
 import {
   CreateUserAdminDto,
@@ -32,6 +33,8 @@ import {
   PermissionResponseDto,
   UserListWithRolesResponse,
 } from '../../application/dto/admin.dto';
+import { ShiftFilters } from '../../domain/repositories/shift.repository.interface';
+import { ShiftStatus } from '../../domain/entities/shift.entity';
 import {
   ApiTags,
   ApiOperation,
@@ -67,7 +70,10 @@ import {
 })
 @ApiForbiddenResponse({ description: 'Forbidden - Admin role required' })
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(
+    private readonly adminService: AdminService,
+    private readonly shiftService: ShiftService,
+  ) {}
 
   // ===================================
   // DASHBOARD ENDPOINTS
@@ -698,5 +704,199 @@ export class AdminController {
       success: true,
       message: 'Permission deleted successfully',
     };
+  }
+
+  // ===================================
+  // SHIFT REPORTS ENDPOINTS
+  // ===================================
+
+  @Get('shifts/active')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get all active shifts',
+    description:
+      'Retrieve all active shifts with user information for admin reports. Admin role required.',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Number of shifts to return',
+    type: Number,
+    example: 50,
+  })
+  @ApiQuery({
+    name: 'offset',
+    required: false,
+    description: 'Number of shifts to skip',
+    type: Number,
+    example: 0,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Active shifts retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        shifts: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string' },
+              userId: { type: 'string' },
+              clockInTime: { type: 'string' },
+              clockOutTime: { type: 'string', nullable: true },
+              lunchStartTime: { type: 'string', nullable: true },
+              lunchEndTime: { type: 'string', nullable: true },
+              status: { type: 'string' },
+              createdAt: { type: 'string' },
+              updatedAt: { type: 'string' },
+              user: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string' },
+                  rut: { type: 'string' },
+                  firstName: { type: 'string' },
+                  lastName: { type: 'string' },
+                  email: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        total: { type: 'number' },
+      },
+    },
+  })
+  async getActiveShifts(
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
+  ): Promise<{ shifts: any[]; total: number }> {
+    try {
+      const result = await this.shiftService.getAllActiveShifts(
+        limit || 50,
+        offset || 0,
+      );
+      return result;
+    } catch (error) {
+      throw new BadRequestException({
+        message: 'Failed to retrieve active shifts',
+        error: error.message,
+      });
+    }
+  }
+
+  @Get('shifts')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get all shifts',
+    description:
+      'Retrieve all shifts from all users with user information for admin reports. Admin role required.',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Number of shifts to return',
+    type: Number,
+    example: 50,
+  })
+  @ApiQuery({
+    name: 'offset',
+    required: false,
+    description: 'Number of shifts to skip',
+    type: Number,
+    example: 0,
+  })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    description: 'Filter shifts from this date (YYYY-MM-DD)',
+    type: String,
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    description: 'Filter shifts until this date (YYYY-MM-DD)',
+    type: String,
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    description: 'Filter shifts by status (PENDING, ACTIVE, COMPLETED)',
+    type: String,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'All shifts retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        shifts: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string' },
+              userId: { type: 'string' },
+              clockInTime: { type: 'string' },
+              clockOutTime: { type: 'string', nullable: true },
+              lunchStartTime: { type: 'string', nullable: true },
+              lunchEndTime: { type: 'string', nullable: true },
+              status: { type: 'string' },
+              createdAt: { type: 'string' },
+              updatedAt: { type: 'string' },
+              user: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string' },
+                  rut: { type: 'string' },
+                  firstName: { type: 'string' },
+                  lastName: { type: 'string' },
+                  email: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        total: { type: 'number' },
+      },
+    },
+  })
+  async getAllShifts(
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('status') status?: string,
+  ): Promise<{ shifts: any[]; total: number }> {
+    try {
+      // Check if filters are provided
+      const hasFilters = startDate || endDate || status;
+
+      if (hasFilters) {
+        const filters: ShiftFilters = {};
+        if (startDate) filters.startDate = startDate;
+        if (endDate) filters.endDate = endDate;
+        if (status) filters.status = status as ShiftStatus;
+
+        const result = await this.shiftService.getAllShiftsWithFilters(
+          filters,
+          limit || 50,
+          offset || 0,
+        );
+        return result;
+      } else {
+        const result = await this.shiftService.getAllShifts(
+          limit || 50,
+          offset || 0,
+        );
+        return result;
+      }
+    } catch (error) {
+      throw new BadRequestException({
+        message: 'Failed to retrieve shifts',
+        error: error.message,
+      });
+    }
   }
 }

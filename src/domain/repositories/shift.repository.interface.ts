@@ -47,4 +47,17 @@ export interface IShiftRepository {
     userId: string,
     filters: ShiftFilters,
   ): Promise<number>;
+  findAllActiveWithUsers(
+    limit?: number,
+    offset?: number,
+  ): Promise<ShiftWithUser[]>;
+  countAllActive(): Promise<number>;
+  findAllWithUsers(limit?: number, offset?: number): Promise<ShiftWithUser[]>;
+  countAll(): Promise<number>;
+  findAllWithUsersAndFilters(
+    filters: ShiftFilters,
+    limit?: number,
+    offset?: number,
+  ): Promise<ShiftWithUser[]>;
+  countAllWithFilters(filters: ShiftFilters): Promise<number>;
 }

@@ -9,11 +9,13 @@ import { UserRepository } from '../../infrastructure/repositories/user.repositor
 import { RoleRepository } from '../../infrastructure/repositories/role.repository';
 import { PermissionRepository } from '../../infrastructure/repositories/permission.repository';
 import { AuthModule } from './auth.module';
+import { ShiftModule } from './shift.module';
 
 @Module({
   imports: [
     DatabaseModule,
     AuthModule,
+    ShiftModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'your-secret-key',
       signOptions: { expiresIn: '24h' },

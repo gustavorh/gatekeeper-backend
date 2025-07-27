@@ -24,4 +24,11 @@ export interface IShiftService {
   }>;
   validateClockIn(userId: string): Promise<boolean>;
   validateClockOut(userId: string): Promise<boolean>;
+  getAllActiveShifts(
+    limit?: number,
+    offset?: number,
+  ): Promise<{
+    shifts: ShiftWithUser[];
+    total: number;
+  }>;
 }

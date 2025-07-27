@@ -149,6 +149,22 @@ export class ShiftService implements IShiftService {
     return { shifts, total };
   }
 
+  async getAllActiveShifts(
+    limit: number = 50,
+    offset: number = 0,
+  ): Promise<{ shifts: ShiftWithUser[]; total: number }> {
+    // Get all active shifts with user information
+    const shifts = await this.shiftRepository.findAllActiveWithUsers(
+      limit,
+      offset,
+    );
+
+    // Get total count of active shifts
+    const total = await this.shiftRepository.countAllActive();
+
+    return { shifts, total };
+  }
+
   async validateClockIn(userId: string): Promise<boolean> {
     // Check for active shift
     const activeShift = await this.shiftRepository.findActiveByUserId(userId);
@@ -169,5 +185,36 @@ export class ShiftService implements IShiftService {
     // Check for active shift
     const activeShift = await this.shiftRepository.findActiveByUserId(userId);
     return !!activeShift;
+  }
+
+  async getAllShifts(
+    limit: number = 50,
+    offset: number = 0,
+  ): Promise<{ shifts: ShiftWithUser[]; total: number }> {
+    // Get all shifts with user information
+    const shifts = await this.shiftRepository.findAllWithUsers(limit, offset);
+
+    // Get total count of all shifts
+    const total = await this.shiftRepository.countAll();
+
+    return { shifts, total };
+  }
+
+  async getAllShiftsWithFilters(
+    filters: ShiftFilters,
+    limit: number = 50,
+    offset: number = 0,
+  ): Promise<{ shifts: ShiftWithUser[]; total: number }> {
+    // Get all shifts with user information and filters
+    const shifts = await this.shiftRepository.findAllWithUsersAndFilters(
+      filters,
+      limit,
+      offset,
+    );
+
+    // Get total count with filters
+    const total = await this.shiftRepository.countAllWithFilters(filters);
+
+    return { shifts, total };
   }
 }
