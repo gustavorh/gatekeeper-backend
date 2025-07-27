@@ -196,20 +196,31 @@ export class AdminService {
 
     const updatedUser = await this.userRepository.update(id, updateData);
 
-    // Update roles if provided
-    if (updateUserDto.roleIds) {
-      // Remove all existing roles
-      const userRoles = await this.roleRepository.findUserRoles(id);
-      // Note: You might need to implement removeRoleFromUser in the repository
-      // For now, we'll just assign the new roles
-      console.log(
-        `Updating roles for user ${id}, current roles:`,
-        userRoles.length,
-      );
+    console.log('existingUser', existingUser);
+    console.log('id', id);
+    console.log('updateUserDto', updateUserDto);
+    console.log('updateData', updateData);
 
-      // Assign new roles
-      for (const roleId of updateUserDto.roleIds) {
-        await this.roleRepository.assignRoleToUser(id, roleId);
+    // Update roles if provided
+    // TODO: Implement this
+    if (updateUserDto.roleIds) {
+      // Get current user roles
+      const currentUserRoles = await this.roleRepository.findUserRoles(id);
+      const currentRoleIds = currentUserRoles.map((role) => role.id);
+      const newRoleIds = updateUserDto.roleIds;
+
+      // Remove roles that are no longer in the new list
+      for (const currentRoleId of currentRoleIds) {
+        if (!newRoleIds.includes(currentRoleId)) {
+          await this.roleRepository.removeRoleFromUser(id, currentRoleId);
+        }
+      }
+
+      // Add new roles that are not already assigned
+      for (const newRoleId of newRoleIds) {
+        if (!currentRoleIds.includes(newRoleId)) {
+          await this.roleRepository.assignRoleToUser(id, newRoleId);
+        }
       }
     }
 
