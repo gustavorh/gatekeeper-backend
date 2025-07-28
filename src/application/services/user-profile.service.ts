@@ -1,4 +1,9 @@
-import { Injectable, Inject } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { IUserRepository } from '../../domain/repositories/user.repository.interface';
 import { IRoleRepository } from '../../domain/repositories/role.repository.interface';
 import { IPermissionRepository } from '../../domain/repositories/permission.repository.interface';
@@ -8,6 +13,7 @@ import {
   RoleResponse,
   PermissionResponse,
 } from '../dto/response.dto';
+import { UpdateProfileDto, ProfileUpdateResponse } from '../dto/profile.dto';
 
 @Injectable()
 export class UserProfileService {
@@ -69,6 +75,47 @@ export class UserProfileService {
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
       roles: rolesWithPermissions,
+    };
+  }
+
+  async updateProfile(
+    userId: string,
+    updateProfileDto: UpdateProfileDto,
+  ): Promise<ProfileUpdateResponse> {
+    // Verify user exists
+    const existingUser = await this.userRepository.findById(userId);
+    if (!existingUser) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Check if email is being changed and if it's already in use
+    if (
+      updateProfileDto.email &&
+      updateProfileDto.email !== existingUser.email
+    ) {
+      const emailExists = await this.userRepository.existsByEmail(
+        updateProfileDto.email,
+      );
+      if (emailExists) {
+        throw new ConflictException('Email is already in use by another user');
+      }
+    }
+
+    // Update user profile
+    const updatedUser = await this.userRepository.update(
+      userId,
+      updateProfileDto,
+    );
+
+    return {
+      id: updatedUser.id,
+      rut: updatedUser.rut,
+      email: updatedUser.email,
+      firstName: updatedUser.firstName,
+      lastName: updatedUser.lastName,
+      isActive: updatedUser.isActive,
+      createdAt: updatedUser.createdAt,
+      updatedAt: updatedUser.updatedAt,
     };
   }
 }

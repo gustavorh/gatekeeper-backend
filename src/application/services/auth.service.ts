@@ -3,11 +3,14 @@ import {
   UnauthorizedException,
   ConflictException,
   Inject,
+  NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { IAuthService } from '../../domain/services/auth.service.interface';
 import { LoginDto, RegisterDto } from '../dto/auth.dto';
+import { ChangePasswordDto } from '../dto/profile.dto';
 import { IUserRepository } from '../../domain/repositories/user.repository.interface';
 import { IRoleRepository } from '../../domain/repositories/role.repository.interface';
 import { User } from '../../domain/entities/user.entity';
@@ -114,6 +117,54 @@ export class AuthService implements IAuthService {
     } catch {
       return null;
     }
+  }
+
+  async changePassword(
+    userId: string,
+    changePasswordDto: ChangePasswordDto,
+  ): Promise<{ success: boolean; message: string }> {
+    // Find the user
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Verify current password
+    const isCurrentPasswordValid = await this.comparePassword(
+      changePasswordDto.currentPassword,
+      user.password,
+    );
+
+    if (!isCurrentPasswordValid) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+
+    // Check if new password is different from current password
+    const isSamePassword = await this.comparePassword(
+      changePasswordDto.newPassword,
+      user.password,
+    );
+
+    if (isSamePassword) {
+      throw new BadRequestException(
+        'New password must be different from current password',
+      );
+    }
+
+    // Hash new password
+    const hashedNewPassword = await this.hashPassword(
+      changePasswordDto.newPassword,
+    );
+
+    // Update password
+    await this.userRepository.update(userId, {
+      password: hashedNewPassword,
+    });
+
+    return {
+      success: true,
+      message: 'Password changed successfully',
+    };
   }
 
   async hashPassword(password: string): Promise<string> {
