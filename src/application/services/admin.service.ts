@@ -196,13 +196,7 @@ export class AdminService {
 
     const updatedUser = await this.userRepository.update(id, updateData);
 
-    console.log('existingUser', existingUser);
-    console.log('id', id);
-    console.log('updateUserDto', updateUserDto);
-    console.log('updateData', updateData);
-
     // Update roles if provided
-    // TODO: Implement this
     if (updateUserDto.roleIds) {
       // Get current user roles
       const currentUserRoles = await this.roleRepository.findUserRoles(id);

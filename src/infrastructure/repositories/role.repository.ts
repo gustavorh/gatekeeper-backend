@@ -1,5 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { IRoleRepository } from '../../domain/repositories/role.repository.interface';
 import {
@@ -100,7 +100,7 @@ export class RoleRepository implements IRoleRepository {
   async removeRoleFromUser(userId: string, roleId: string): Promise<void> {
     await this.db
       .delete(userRoles)
-      .where(eq(userRoles.userId, userId) && eq(userRoles.roleId, roleId));
+      .where(and(eq(userRoles.userId, userId), eq(userRoles.roleId, roleId)));
   }
 
   async removeAllUserRoles(userId: string): Promise<void> {
