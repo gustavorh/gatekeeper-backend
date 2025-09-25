@@ -35,3 +35,24 @@ services:
     #   - "traefik.http.routers.gatekeeper.entrypoints=websecure"
     #   - "traefik.http.routers.gatekeeper.tls.certresolver=letsencrypt"
     #   - "traefik.http.services.gatekeeper.loadbalancer.server.port=3000"
+  frontend:
+    build:
+      context: https://github.com/gustavorh/gatekeeper-frontend.git#main
+      dockerfile: Dockerfile
+      args:
+        # IMPORTANTE: esto se inyecta en build-time de Next.js
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    container_name: frontend
+    environment:
+      NODE_ENV: production
+      PORT: 8000 # Next.js escuchará en 8000
+    depends_on:
+      - api # tu servicio backend
+    ports:
+      - '8000:8000' # expone el frontend en el host 8000
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:8000/']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
