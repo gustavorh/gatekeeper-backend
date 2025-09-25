@@ -3,52 +3,30 @@ version: '3.9'
 services:
   api:
     build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: backend
+      context: https://github.com/gustavorh/gatekeeper-backend.git
+      # usa el stage prod por defecto del Dockerfile
+    container_name: gatekeeper-backend
     environment:
       NODE_ENV: production
       PORT: 3000
-      # ---- ENV de tu app ----
-      DATABASE_URL: ${DATABASE_URL} # apunta al MySQL 10.0.40.253
+      DATABASE_URL: ${DATABASE_URL}
       JWT_SECRET: ${JWT_SECRET}
-    # Publica el puerto si accederás directo; quítalo si usarás Traefik/NPM
+      FRONTEND_URL: ${FRONTEND_URL}
     ports:
       - '3000:3000'
-    # Healthcheck contra /health (ver snippet de main.ts más abajo)
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://localhost:3000/health']
       interval: 10s
       timeout: 5s
       retries: 10
     restart: unless-stopped
-    command:
-      [
-        'sh',
-        '-lc',
-        "if [ -f dist/main.js ]; then node dist/main.js; elif [ -f dist/src/main.js ]; then node dist/src/main.js; else echo 'No encuentro el entrypoint; muestro dist:'; ls -R dist; exit 1; fi",
-      ]
-    # --- Labels Traefik (opcional) ---
-    # labels:
-    #   - "traefik.enable=true"
-    #   - "traefik.http.routers.gatekeeper.rule=Host(`api.gustavorh.com`)"
-    #   - "traefik.http.routers.gatekeeper.entrypoints=websecure"
-    #   - "traefik.http.routers.gatekeeper.tls.certresolver=letsencrypt"
-    #   - "traefik.http.services.gatekeeper.loadbalancer.server.port=3000"
-  frontend:
-    image: gatekeeper-api:latest
-    container_name: frontend
-    environment:
-      NODE_ENV: production
-      PORT: 8000 # Next.js escuchará en 8000
-      FRONTEND_URL: ${FRONTEND_URL}
-    depends_on:
-      - api # tu servicio backend
-    ports:
-      - '8000:8000' # expone el frontend en el host 8000
-    healthcheck:
-      test: ['CMD', 'wget', '-qO-', 'http://localhost:8000/']
-      interval: 10s
-      timeout: 5s
-      retries: 10
-    restart: unless-stopped
+    networks: [app_net]
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
+
+networks:
+  app_net:
+    external: true
