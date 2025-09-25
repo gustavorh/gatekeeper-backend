@@ -1,5 +1,5 @@
 # --- Build stage ---
-FROM node:20-alpine AS builder
+FROM public.ecr.aws/docker/library/node:20-alpine AS builder
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
     
@@ -17,7 +17,7 @@ COPY drizzle ./drizzle
 RUN npm run build
     
 # --- Runtime stage ---
-FROM node:20-alpine AS runner
+FROM public.ecr.aws/docker/library/node:20-alpine AS runner
 # Usuario no root
 RUN addgroup -S nodejs && adduser -S nodeuser -G nodejs
 WORKDIR /app
