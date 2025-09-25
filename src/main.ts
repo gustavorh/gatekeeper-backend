@@ -22,6 +22,12 @@ async function bootstrap() {
   // Global logging interceptor
   app.useGlobalInterceptors(new LoggingInterceptor());
 
+  // Health check endpoint
+  app
+    .getHttpAdapter()
+    .getInstance()
+    .get('/health', (_req, res) => res.status(200).send({ ok: true }));
+
   // Enable CORS for frontend integration
   app.enableCors({
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
