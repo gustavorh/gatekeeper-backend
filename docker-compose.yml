@@ -36,7 +36,7 @@ services:
     #   - "traefik.http.routers.gatekeeper.tls.certresolver=letsencrypt"
     #   - "traefik.http.services.gatekeeper.loadbalancer.server.port=3000"
   frontend:
-    image: gk-frontend:dev
+    image: gatekeeper-api:latest
     container_name: frontend
     environment:
       NODE_ENV: production
