@@ -1,12 +1,12 @@
 # ========= deps (prod) =========
-FROM node:20-alpine AS deps
+FROM public.ecr.aws/docker/library/node:20-alpine AS deps
 WORKDIR /app
 COPY package*.json ./
 # instala solo prod deps para imagen final
 RUN npm ci --omit=dev
 
 # ========= build =========
-FROM node:20-alpine AS build
+FROM public.ecr.aws/docker/library/node:20-alpine AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
@@ -14,7 +14,7 @@ COPY . .
 RUN npm run build
 
 # ========= runtime (prod) =========
-FROM node:20-alpine AS prod
+FROM public.ecr.aws/docker/library/node:20-alpine AS prod
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
