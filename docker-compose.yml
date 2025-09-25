@@ -1,0 +1,31 @@
+version: '3.9'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: backend
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      # ---- ENV de tu app ----
+      DATABASE_URL: ${DATABASE_URL} # apunta al MySQL 10.0.40.253
+      JWT_SECRET: ${JWT_SECRET}
+    # Publica el puerto si accederás directo; quítalo si usarás Traefik/NPM
+    ports:
+      - '3000:3000'
+    # Healthcheck contra /health (ver snippet de main.ts más abajo)
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:3000/health']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    # --- Labels Traefik (opcional) ---
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.gatekeeper.rule=Host(`api.gustavorh.com`)"
+    #   - "traefik.http.routers.gatekeeper.entrypoints=websecure"
+    #   - "traefik.http.routers.gatekeeper.tls.certresolver=letsencrypt"
+    #   - "traefik.http.services.gatekeeper.loadbalancer.server.port=3000"
