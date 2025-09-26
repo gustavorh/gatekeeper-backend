@@ -1,38 +1,19 @@
-# --- Build stage ---
-  FROM public.ecr.aws/docker/library/node:20-alpine AS builder
-  RUN apk add --no-cache libc6-compat
+# --- build ---
+  FROM node:20-alpine AS build
   WORKDIR /app
-      
-  # Instala deps (prod+dev) para poder compilar y correr CLI de drizzle si hace falta
   COPY package*.json ./
   RUN npm ci
-      
-  # Copia TS/Config y compila
-  COPY tsconfig*.json ./
-  COPY src ./src
-  # Si tu app necesita archivos adicionales (p. ej. esquema drizzle), cópialos:
-  COPY drizzle.config.ts ./
-  COPY drizzle ./drizzle
-      
+  COPY . .
   RUN npm run build
-      
-  # --- Runtime stage ---
-  FROM public.ecr.aws/docker/library/node:20-alpine AS runner
-  # Usuario no root
-  RUN addgroup -S nodejs && adduser -S nodeuser -G nodejs
+  
+  # --- runtime ---
+  FROM node:20-alpine AS runtime
   WORKDIR /app
-      
-  # Copiamos solo lo necesario
-  COPY --from=builder /app/node_modules ./node_modules
-  COPY --from=builder /app/dist ./dist
-  # Si tu app lee archivos estáticos (p. ej. drizzle/_meta) cópialos también:
-  COPY --from=builder /app/drizzle ./drizzle
-  COPY --from=builder /app/drizzle.config.ts ./drizzle.config.ts
-      
   ENV NODE_ENV=production
-  ENV PORT=3000
-  USER nodeuser
+  # Next.js standalone output
+  COPY --from=build /app/.next/standalone ./
+  COPY --from=build /app/.next/static ./.next/static
+  COPY --from=build /app/public ./public
   EXPOSE 3000
-      
-  CMD ["node", "dist/main.js"]
-      
+  CMD ["node", "server.js"]
+  
